@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Archives de build
+*.zip
+
+# Éditeurs / dépendances
+.idea/
+.vscode/
+vendor/
+node_modules/

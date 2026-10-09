@@ -1,0 +1,4 @@
+# Exclus du zip de distribution (git archive)
+/.gitignore export-ignore
+/.gitattributes export-ignore
+/tests export-ignore

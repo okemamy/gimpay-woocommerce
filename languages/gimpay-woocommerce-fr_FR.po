@@ -1,0 +1,362 @@
+# Copyright (C) 2026 
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: GIM Pay for WooCommerce 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: French\n"
+"Language: fr_FR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-10-09T00:29:07+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.11.0\n"
+"X-Domain: gimpay-woocommerce\n"
+
+#. Plugin Name of the plugin
+#: gimpay-woocommerce.php
+msgid "GIM Pay for WooCommerce"
+msgstr "GIM Pay for WooCommerce"
+
+#. Description of the plugin
+#: gimpay-woocommerce.php
+msgid "Card payments (GIM-UEMOA, Visa, Mastercard) through GIM Pay (PayForm Plus / Lightbox)."
+msgstr "Paiement par carte GIM-UEMOA, Visa et Mastercard via GIM Pay (PayForm Plus / Lightbox)."
+
+#. translators: %d: HTTP status code.
+#: includes/class-gimpay-api.php:70
+msgid "Unexpected response from the GIM Pay Data Service (HTTP %d)."
+msgstr "Réponse inattendue du Data Service GIM Pay (HTTP %d)."
+
+#. translators: %s: message returned by GIM Pay.
+#: includes/class-gimpay-api.php:75
+msgid "GIM Pay Data Service: %s"
+msgstr "Data Service GIM Pay : %s"
+
+#. translators: %s: message returned by GIM Pay.
+#: includes/class-gimpay-api.php:75
+msgid "failure"
+msgstr "échec"
+
+#: includes/class-gimpay-gateway.php:67
+msgid "Card payments (GIM-UEMOA, Visa, Mastercard) through the GIM Pay Lightbox (PayForm Plus)."
+msgstr "Paiement par carte GIM-UEMOA, Visa et Mastercard via la Lightbox GIM Pay (PayForm Plus)."
+
+#: includes/class-gimpay-gateway.php:96
+msgid "Enable/Disable"
+msgstr "Activer / Désactiver"
+
+#: includes/class-gimpay-gateway.php:98
+msgid "Enable GIM Pay"
+msgstr "Activer GIM Pay"
+
+#: includes/class-gimpay-gateway.php:102
+msgid "Title"
+msgstr "Titre"
+
+#: includes/class-gimpay-gateway.php:104
+msgid "Payment method name shown to the customer."
+msgstr "Nom du moyen de paiement affiché au client."
+
+#: includes/class-gimpay-gateway.php:105
+msgid "Bank card (GIM-UEMOA, Visa, Mastercard)"
+msgstr "Carte bancaire (GIM-UEMOA, Visa, Mastercard)"
+
+#: includes/class-gimpay-gateway.php:109
+msgid "Description"
+msgstr "Description"
+
+#: includes/class-gimpay-gateway.php:111
+msgid "Pay securely by bank card with GIM Pay."
+msgstr "Payez en toute sécurité par carte bancaire via GIM Pay."
+
+#: includes/class-gimpay-gateway.php:114
+msgid "Merchant credentials"
+msgstr "Identifiants marchand"
+
+#: includes/class-gimpay-gateway.php:116
+msgid "Provided by your partner bank / GIM Pay integration consultant."
+msgstr "Fournis par votre banque partenaire / le consultant d’intégration GIM Pay."
+
+#: includes/class-gimpay-gateway.php:119
+msgid "Test mode (UAT)"
+msgstr "Mode test (UAT)"
+
+#: includes/class-gimpay-gateway.php:121
+msgid "Use the GIM Pay test environment (lightbox-uat.gimpay.org)"
+msgstr "Utiliser l’environnement de test GIM Pay (lightbox-uat.gimpay.org)"
+
+#: includes/class-gimpay-gateway.php:123
+msgid "Uncheck to go live (checkout.gimpay.org)."
+msgstr "Décochez pour passer en production (checkout.gimpay.org)."
+
+#: includes/class-gimpay-gateway.php:126
+msgid "Merchant ID (MID)"
+msgstr "Merchant ID (MID)"
+
+#: includes/class-gimpay-gateway.php:128
+msgid "11 to 18 characters."
+msgstr "11 à 18 caractères."
+
+#: includes/class-gimpay-gateway.php:132
+msgid "Terminal ID (TID)"
+msgstr "Terminal ID (TID)"
+
+#: includes/class-gimpay-gateway.php:134
+msgid "6 to 8 characters."
+msgstr "6 à 8 caractères."
+
+#: includes/class-gimpay-gateway.php:138
+msgid "Merchant secret key"
+msgstr "Clé secrète marchand"
+
+#: includes/class-gimpay-gateway.php:140
+msgid "Merchant Secret Key (hexadecimal). It is never displayed again: leave empty to keep the saved key."
+msgstr "Merchant Secret Key (hexadécimale). Elle n’est jamais réaffichée : laissez vide pour conserver la clé enregistrée."
+
+#: includes/class-gimpay-gateway.php:144
+msgid "Advanced options"
+msgstr "Options avancées"
+
+#: includes/class-gimpay-gateway.php:148
+msgid "Amount unit"
+msgstr "Unité du montant"
+
+#: includes/class-gimpay-gateway.php:150
+msgid "GIM Pay expects the amount in the smallest currency unit. XOF has no minor unit: keep \"× 1\" unless GIM Pay tells you otherwise."
+msgstr "GIM Pay attend le montant dans la plus petite unité. Le XOF n’a pas de centimes : laissez « × 1 » sauf indication contraire de GIM Pay."
+
+#: includes/class-gimpay-gateway.php:153
+msgid "× 1 (1,000 XOF sent as 1000)"
+msgstr "× 1 (1 000 XOF envoyé comme 1000)"
+
+#: includes/class-gimpay-gateway.php:154
+msgid "× 100 (1,000 XOF sent as 100000)"
+msgstr "× 100 (1 000 XOF envoyé comme 100000)"
+
+#: includes/class-gimpay-gateway.php:158
+msgid "Double verification"
+msgstr "Double vérification"
+
+#: includes/class-gimpay-gateway.php:160
+msgid "Confirm every payment with the GIM Pay Data Service (FilterTransactions)"
+msgstr "Confirmer chaque paiement via le Data Service GIM Pay (FilterTransactions)"
+
+#: includes/class-gimpay-gateway.php:162
+msgid "Strongly recommended. If confirmation fails, the order is put on hold instead of being completed. When disabled, only the signature relayed by the browser is trusted."
+msgstr "Fortement recommandé. Si la confirmation échoue, la commande passe « En attente » au lieu d’être validée. Désactivé, seule la signature transmise par le navigateur fait foi."
+
+#: includes/class-gimpay-gateway.php:165
+msgid "Debug log"
+msgstr "Journal de débogage"
+
+#: includes/class-gimpay-gateway.php:167
+msgid "Log exchanges"
+msgstr "Enregistrer les échanges"
+
+#: includes/class-gimpay-gateway.php:169
+msgid "WooCommerce > Status > Logs, source \"gimpay\". Disable in production."
+msgstr "WooCommerce > État > Journaux, source « gimpay ». À désactiver en production."
+
+#. translators: %s: PHP constant name.
+#: includes/class-gimpay-gateway.php:180
+msgid "Defined in wp-config.php (constant %s)."
+msgstr "Défini dans wp-config.php (constante %s)."
+
+#: includes/class-gimpay-gateway.php:208
+msgid "•••••••• (key saved)"
+msgstr "•••••••• (clé enregistrée)"
+
+#: includes/class-gimpay-gateway.php:226
+msgid "GIM Pay: the secret key must be a hexadecimal string."
+msgstr "GIM Pay : la clé secrète doit être une chaîne hexadécimale."
+
+#. translators: %s: current store currency code.
+#: includes/class-gimpay-gateway.php:247
+msgid "GIM Pay only works with CFA francs (XOF). Current currency: %s."
+msgstr "GIM Pay ne fonctionne qu’en franc CFA (XOF). Devise actuelle : %s."
+
+#: includes/class-gimpay-gateway.php:322
+msgid "Payment received, verifying… Please do not close this page."
+msgstr "Paiement reçu, vérification en cours… Ne fermez pas cette page."
+
+#: includes/class-gimpay-gateway.php:323
+msgid "Payment cancelled. You can try again whenever you like."
+msgstr "Paiement annulé. Vous pouvez réessayer quand vous voulez."
+
+#: includes/class-gimpay-gateway.php:324
+msgid "The payment failed"
+msgstr "Le paiement n’a pas abouti"
+
+#: includes/class-gimpay-gateway.php:325
+msgid "We could not confirm the payment. If your card was charged, please contact us with your order number."
+msgstr "Impossible de confirmer le paiement. Si votre carte a été débitée, contactez-nous avec votre numéro de commande."
+
+#: includes/class-gimpay-gateway.php:326
+msgid "The GIM Pay payment module could not be loaded. Check your connection and reload the page."
+msgstr "Le module de paiement GIM Pay n’a pas pu être chargé. Vérifiez votre connexion puis rechargez la page."
+
+#. translators: %s: order total.
+#: includes/class-gimpay-gateway.php:332
+msgid "Pay %s"
+msgstr "Payer %s"
+
+#: includes/class-gimpay-gateway.php:335
+msgid "The secure GIM Pay payment window is opening…"
+msgstr "La fenêtre de paiement sécurisé GIM Pay va s’ouvrir…"
+
+#: includes/class-gimpay-gateway.php:337
+msgid "Cancel order"
+msgstr "Annuler la commande"
+
+#: includes/class-gimpay-gateway.php:350
+msgid "Invalid request."
+msgstr "Requête invalide."
+
+#: includes/class-gimpay-gateway.php:356
+msgid "Your session has expired. Please reload the page."
+msgstr "Votre session a expiré. Veuillez recharger la page."
+
+#: includes/class-gimpay-gateway.php:362
+msgid "Order not found."
+msgstr "Commande introuvable."
+
+#: includes/class-gimpay-gateway.php:377
+msgid "Unknown event."
+msgstr "Événement inconnu."
+
+#: includes/class-gimpay-gateway.php:388
+msgid "GIM Pay: callback rejected, unknown reference."
+msgstr "GIM Pay : callback rejeté, référence inconnue."
+
+#: includes/class-gimpay-gateway.php:390
+msgid "Invalid payment reference."
+msgstr "Référence de paiement invalide."
+
+#. translators: %s: GIM Pay merchant reference.
+#: includes/class-gimpay-gateway.php:402
+msgid "GIM Pay: WARNING, a second signed payment was received (ref. %s) although the order was already paid. Check and refund if needed."
+msgstr "GIM Pay : ATTENTION, second paiement signé reçu (réf. %s) alors que la commande était déjà payée. Vérifiez et remboursez si nécessaire."
+
+#. translators: 1: amount paid, 2: expected amount.
+#: includes/class-gimpay-gateway.php:409
+msgid "GIM Pay: amount paid (%1$d) differs from the expected amount (%2$d). Check manually."
+msgstr "GIM Pay : montant payé (%1$d) différent du montant attendu (%2$d). Vérifiez manuellement."
+
+#. translators: %s: GIM Pay merchant reference.
+#: includes/class-gimpay-gateway.php:416
+msgid "GIM Pay: callback rejected, invalid SecureHash (ref. %s)."
+msgstr "GIM Pay : callback rejeté, SecureHash invalide (réf. %s)."
+
+#: includes/class-gimpay-gateway.php:417
+#: includes/class-gimpay-gateway.php:446
+msgid "Invalid payment signature."
+msgstr "Signature du paiement invalide."
+
+#: includes/class-gimpay-gateway.php:419
+msgid "signature verified"
+msgstr "signature vérifiée"
+
+#: includes/class-gimpay-gateway.php:429
+msgid "The payment cannot be confirmed right now."
+msgstr "Paiement impossible à confirmer pour le moment."
+
+#. translators: 1: GIM Pay merchant reference, 2: error message.
+#: includes/class-gimpay-gateway.php:432
+msgid "GIM Pay: signed payment received (ref. %1$s) but confirmation failed: %2$s. Use the \"Check GIM Pay payment\" order action."
+msgstr "GIM Pay : paiement signé reçu (réf. %1$s) mais confirmation impossible : %2$s. Utilisez l’action « Vérifier le paiement GIM Pay »."
+
+#: includes/class-gimpay-gateway.php:438
+msgid "signature verified, confirmed by the Data Service"
+msgstr "signature vérifiée, confirmé par le Data Service"
+
+#: includes/class-gimpay-gateway.php:438
+msgid "confirmed by the Data Service"
+msgstr "confirmé par le Data Service"
+
+#. translators: %s: GIM Pay merchant reference.
+#: includes/class-gimpay-gateway.php:445
+msgid "GIM Pay: callback rejected, invalid signature and no approved payment (ref. %s)."
+msgstr "GIM Pay : callback rejeté, signature invalide et aucun paiement approuvé (réf. %s)."
+
+#. translators: %s: GIM Pay merchant reference.
+#: includes/class-gimpay-gateway.php:450
+msgid "GIM Pay: signed payment received (ref. %s) but not found as approved by the Data Service. Check manually."
+msgstr "GIM Pay : paiement signé reçu (réf. %s) mais non trouvé comme approuvé par le Data Service. Vérifiez manuellement."
+
+#. translators: 1: GIM Pay merchant reference, 2: how the payment was verified.
+#: includes/class-gimpay-gateway.php:457
+msgid "GIM Pay: payment approved (ref. %1$s, %2$s)."
+msgstr "GIM Pay : paiement approuvé (réf. %1$s, %2$s)."
+
+#: includes/class-gimpay-gateway.php:477
+msgid "Unknown error"
+msgstr "Erreur inconnue"
+
+#. translators: %s: error message returned by GIM Pay.
+#: includes/class-gimpay-gateway.php:486
+msgid "GIM Pay: payment attempt failed (%s)."
+msgstr "GIM Pay : échec d’une tentative de paiement (%s)."
+
+#: includes/class-gimpay-gateway.php:539
+msgid "GIM Pay: the order is already paid."
+msgstr "GIM Pay : la commande est déjà payée."
+
+#: includes/class-gimpay-gateway.php:544
+msgid "GIM Pay: no payment attempt recorded for this order."
+msgstr "GIM Pay : aucune tentative de paiement enregistrée pour cette commande."
+
+#. translators: %s: error message.
+#: includes/class-gimpay-gateway.php:552
+msgid "GIM Pay: verification failed: %s"
+msgstr "GIM Pay : vérification impossible : %s"
+
+#. translators: %s: retrieval reference number (RRN).
+#: includes/class-gimpay-gateway.php:558
+msgid "automatic reconciliation, RRN %s"
+msgstr "réconciliation automatique, RRN %s"
+
+#. translators: %s: retrieval reference number (RRN).
+#: includes/class-gimpay-gateway.php:558
+msgid "manual check, RRN %s"
+msgstr "vérification manuelle, RRN %s"
+
+#: includes/class-gimpay-gateway.php:560
+msgid "GIM Pay: approved payment found, order completed."
+msgstr "GIM Pay : paiement approuvé trouvé, commande validée."
+
+#. translators: %s: comma-separated list of merchant references.
+#: includes/class-gimpay-gateway.php:565
+msgid "GIM Pay: no approved payment found for references %s."
+msgstr "GIM Pay : aucun paiement approuvé trouvé pour les références %s."
+
+#: includes/gimpay-admin.php:15
+msgid "Settings"
+msgstr "Réglages"
+
+#: includes/gimpay-admin.php:33
+msgid "Suggested text for stores accepting card payments with GIM Pay."
+msgstr "Texte suggéré pour les boutiques acceptant les paiements par carte avec GIM Pay."
+
+#: includes/gimpay-admin.php:34
+msgid "Suggested text:"
+msgstr "Texte suggéré :"
+
+#: includes/gimpay-admin.php:35
+msgid "Card payments are processed by GIM Pay (GIM-UEMOA, operated with PaySky). When you pay by card, the payment window is loaded from gimpay.org and your card details are entered directly with GIM Pay: they are never sent to or stored on our website. We send GIM Pay the order amount and a technical payment reference. GIM Pay sends us back the payment result, a masked card number and the cardholder name, which we only use to confirm the payment."
+msgstr "Les paiements par carte sont traités par GIM Pay (GIM-UEMOA, opéré avec PaySky). Lorsque vous payez par carte, la fenêtre de paiement est chargée depuis gimpay.org et vos données de carte sont saisies directement chez GIM Pay : elles ne sont jamais transmises à notre site ni stockées par celui-ci. Nous transmettons à GIM Pay le montant de la commande et une référence technique de paiement. GIM Pay nous renvoie le résultat du paiement, un numéro de carte masqué et le nom du titulaire, que nous utilisons uniquement pour confirmer le paiement."
+
+#: includes/gimpay-admin.php:46
+msgid "Check GIM Pay payment"
+msgstr "Vérifier le paiement GIM Pay"
+
+#: includes/gimpay-admin.php:59
+msgid "You are not allowed to do this."
+msgstr "Vous n’avez pas l’autorisation de faire cela."
+
+#: includes/gimpay-cron.php:25
+msgid "Every 15 minutes (GIM Pay)"
+msgstr "Toutes les 15 minutes (GIM Pay)"
