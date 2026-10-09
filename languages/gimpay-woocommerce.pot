@@ -2,7 +2,7 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: GIM Pay for WooCommerce 1.2.2\n"
+"Project-Id-Version: GIM Pay for WooCommerce 1.3.0\n"
 "Report-Msgid-Bugs-To: \n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -375,22 +375,38 @@ msgstr ""
 msgid "Outlet number provided by the bank. For reference only, like the acquirer merchant ID."
 msgstr ""
 
-#: includes/class-gimpay-gateway.php
-msgid "Lightbox script URL"
-msgstr ""
-
-#: includes/class-gimpay-gateway.php
-msgid "Data Service URL"
-msgstr ""
-
-#. translators: 1: test URL, 2: live URL.
-#: includes/class-gimpay-gateway.php
-#, php-format
-msgid "Leave empty to use the default URL: %1$s (test) or %2$s (live)."
-msgstr ""
-
 #. translators: %s: field name.
 #: includes/class-gimpay-gateway.php
 #, php-format
 msgid "GIM Pay: \"%s\" must be a valid HTTPS URL."
+msgstr ""
+
+#: includes/class-gimpay-gateway.php
+msgid "GIM Pay endpoints"
+msgstr ""
+
+#: includes/class-gimpay-gateway.php
+msgid "Pre-filled with the official GIM Pay URLs. Only change them if GIM Pay or your bank gives you different ones. Clear a field to restore its default value."
+msgstr ""
+
+#: includes/class-gimpay-gateway.php
+msgid "Lightbox script URL (test)"
+msgstr ""
+
+#: includes/class-gimpay-gateway.php
+msgid "Lightbox script URL (live)"
+msgstr ""
+
+#: includes/class-gimpay-gateway.php
+msgid "Data Service URL (test)"
+msgstr ""
+
+#: includes/class-gimpay-gateway.php
+msgid "Data Service URL (live)"
+msgstr ""
+
+#. translators: %s: default URL.
+#: includes/class-gimpay-gateway.php
+#, php-format
+msgid "Default: %s"
 msgstr ""

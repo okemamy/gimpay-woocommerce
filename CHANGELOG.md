@@ -6,8 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-09
+
 ### Changed
 
+- Endpoint URLs are now pre-filled with the official GIM Pay URLs and remain editable, with
+  separate test and live fields for the Lightbox script and the Data Service. Clearing a
+  field restores its default value.
 - English documentation and code comments; added license, contributing and security guides.
 
 ## [1.2.2] - 2026-10-09
@@ -55,7 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release.
 
-[Unreleased]: https://github.com/okemamy/gimpay-woocommerce/compare/v1.2.2...HEAD
+[Unreleased]: https://github.com/okemamy/gimpay-woocommerce/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/okemamy/gimpay-woocommerce/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/okemamy/gimpay-woocommerce/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/okemamy/gimpay-woocommerce/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/okemamy/gimpay-woocommerce/releases/tag/v1.2.0

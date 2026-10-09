@@ -46,13 +46,17 @@ through the **GIM Pay PayForm Plus Lightbox**.
 | Acquirer merchant ID | Bank-side merchant ID | Reference only: debug log and failed payment notes |
 | Outlet | Outlet number | Reference only: debug log and failed payment notes |
 | Merchant secret key | Merchant secret key (hexadecimal) | HMAC signatures; never displayed again |
-| Lightbox script URL | Only if GIM Pay gives you a different one | Empty = default test/live URL |
-| Data Service URL | Only if GIM Pay gives you a different one | Empty = default test/live URL |
+| Lightbox script URL (test / live) | Pre-filled with the official GIM Pay URL | Script loaded on the payment page |
+| Data Service URL (test / live) | Pre-filled with the official GIM Pay URL | Server-to-server payment confirmation |
 | Amount unit | Keep `× 1` for XOF | Amount sent to GIM Pay |
 | Double verification | Enabled by default | Confirms every payment with the Data Service |
 | Debug log | Disabled by default | WooCommerce › Status › Logs, source `gimpay` |
 
-Custom URLs must use HTTPS. Leaving the secret key field empty keeps the saved key.
+The endpoint URLs are pre-filled with the official GIM Pay URLs and only need to be changed
+if GIM Pay or your bank gives you different ones. The test or live URL is used depending on
+**Test mode (UAT)**. Custom URLs must use HTTPS; clearing a field restores its default value.
+
+Leaving the secret key field empty keeps the saved key.
 
 To keep credentials out of the database, define them in `wp-config.php`. Constants take
 precedence over the settings screen:

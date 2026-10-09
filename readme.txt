@@ -4,7 +4,7 @@ Tags: woocommerce, payment gateway, gim-uemoa, xof, credit card
 Requires at least: 6.4
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.2.2
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,9 @@ The card network could not route the card to its issuing bank; this is not a plu
 Enable "Debug log" in the settings, then go to WooCommerce > Status > Logs and pick the "gimpay" source. Disable it in production.
 
 == Changelog ==
+
+= 1.3.0 =
+* Endpoint URLs pre-filled with the official GIM Pay URLs and editable, with separate test and live fields. Clearing a field restores its default value.
 
 = 1.2.2 =
 * New settings: acquirer merchant ID and outlet (shown in debug logs and failed payment notes for bank support).

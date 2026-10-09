@@ -86,8 +86,8 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 		$this->secret_key        = $this->get_credential( 'secret_key' );
 		$this->acquirer_merchant_id = trim( (string) $this->get_option( 'acquirer_merchant_id' ) );
 		$this->outlet_id            = trim( (string) $this->get_option( 'outlet_id' ) );
-		$this->lightbox_url         = $this->get_url_option( 'lightbox_url', self::LIGHTBOX_UAT, self::LIGHTBOX_PROD );
-		$this->data_service_url     = $this->get_url_option( 'data_service_url', GimPay_API::URL_UAT, GimPay_API::URL_PROD );
+		$this->lightbox_url         = $this->get_url_option( $this->sandbox ? 'lightbox_url_test' : 'lightbox_url_live' );
+		$this->data_service_url     = $this->get_url_option( $this->sandbox ? 'data_service_url_test' : 'data_service_url_live' );
 		$this->amount_multiplier = max( 1, (int) $this->get_option( 'amount_multiplier', '1' ) );
 		$this->api_verification  = 'yes' === $this->get_option( 'api_verification', 'yes' );
 		$this->debug             = 'yes' === $this->get_option( 'debug', 'no' );
@@ -111,96 +111,115 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * URL from the settings, or the default URL for the selected environment.
+	 * Default endpoint URLs, editable in the settings.
 	 */
-	private function get_url_option( $key, $uat, $prod ) {
+	const DEFAULT_URLS = array(
+		'lightbox_url_test'     => self::LIGHTBOX_UAT,
+		'lightbox_url_live'     => self::LIGHTBOX_PROD,
+		'data_service_url_test' => GimPay_API::URL_UAT,
+		'data_service_url_live' => GimPay_API::URL_PROD,
+	);
+
+	/**
+	 * URL from the settings, or its default if the setting is empty.
+	 */
+	private function get_url_option( $key ) {
 		$url = trim( (string) $this->get_option( $key ) );
-		return '' !== $url ? $url : ( $this->sandbox ? $uat : $prod );
+		return '' !== $url ? $url : self::DEFAULT_URLS[ $key ];
 	}
 
 	public function init_form_fields() {
 		$this->form_fields = array(
-			'enabled'           => array(
+			'enabled'               => array(
 				'title'   => __( 'Enable/Disable', 'gimpay-woocommerce' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable GIM Pay', 'gimpay-woocommerce' ),
 				'default' => 'no',
 			),
-			'title'             => array(
+			'title'                 => array(
 				'title'       => __( 'Title', 'gimpay-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( 'Payment method name shown to the customer.', 'gimpay-woocommerce' ),
 				'default'     => __( 'Bank card (GIM-UEMOA, Visa, Mastercard)', 'gimpay-woocommerce' ),
 				'desc_tip'    => true,
 			),
-			'description'       => array(
+			'description'           => array(
 				'title'   => __( 'Description', 'gimpay-woocommerce' ),
 				'type'    => 'textarea',
 				'default' => __( 'Pay securely by bank card with GIM Pay.', 'gimpay-woocommerce' ),
 			),
-			'credentials'       => array(
+			'credentials'           => array(
 				'title'       => __( 'Merchant credentials', 'gimpay-woocommerce' ),
 				'type'        => 'title',
 				'description' => __( 'Provided by your partner bank / GIM Pay integration consultant.', 'gimpay-woocommerce' ),
 			),
-			'sandbox'           => array(
+			'sandbox'               => array(
 				'title'       => __( 'Test mode (UAT)', 'gimpay-woocommerce' ),
 				'type'        => 'checkbox',
 				'label'       => __( 'Use the GIM Pay test environment (lightbox-uat.gimpay.org)', 'gimpay-woocommerce' ),
 				'default'     => 'yes',
 				'description' => __( 'Uncheck to go live (checkout.gimpay.org).', 'gimpay-woocommerce' ),
 			),
-			'merchant_id'       => array(
+			'merchant_id'           => array(
 				'title'       => __( 'Merchant ID (MID)', 'gimpay-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( '11 to 18 characters.', 'gimpay-woocommerce' ),
 				'default'     => '',
 			),
-			'terminal_id'       => array(
+			'terminal_id'           => array(
 				'title'       => __( 'Terminal ID (TID)', 'gimpay-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( '6 to 8 characters.', 'gimpay-woocommerce' ),
 				'default'     => '',
 			),
-			'acquirer_merchant_id' => array(
+			'acquirer_merchant_id'  => array(
 				'title'       => __( 'Acquirer merchant ID', 'gimpay-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( 'Merchant ID on the bank (acquirer) side. For reference only: it is not sent to GIM Pay, but it is shown in the debug log and in failed payment order notes, to help the bank support team.', 'gimpay-woocommerce' ),
 				'default'     => '',
 			),
-			'outlet_id'         => array(
+			'outlet_id'             => array(
 				'title'       => __( 'Outlet', 'gimpay-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( 'Outlet number provided by the bank. For reference only, like the acquirer merchant ID.', 'gimpay-woocommerce' ),
 				'default'     => '',
 			),
-			'secret_key'        => array(
+			'secret_key'            => array(
 				'title'       => __( 'Merchant secret key', 'gimpay-woocommerce' ),
 				'type'        => 'gimpay_secret',
 				'description' => __( 'Merchant Secret Key (hexadecimal). It is never displayed again: leave empty to keep the saved key.', 'gimpay-woocommerce' ),
 				'default'     => '',
 			),
-			'advanced'          => array(
+			'endpoints'             => array(
+				'title'       => __( 'GIM Pay endpoints', 'gimpay-woocommerce' ),
+				'type'        => 'title',
+				'description' => __( 'Pre-filled with the official GIM Pay URLs. Only change them if GIM Pay or your bank gives you different ones. Clear a field to restore its default value.', 'gimpay-woocommerce' ),
+			),
+			'lightbox_url_test'     => array(
+				'title'   => __( 'Lightbox script URL (test)', 'gimpay-woocommerce' ),
+				'type'    => 'gimpay_url',
+				'default' => self::LIGHTBOX_UAT,
+			),
+			'lightbox_url_live'     => array(
+				'title'   => __( 'Lightbox script URL (live)', 'gimpay-woocommerce' ),
+				'type'    => 'gimpay_url',
+				'default' => self::LIGHTBOX_PROD,
+			),
+			'data_service_url_test' => array(
+				'title'   => __( 'Data Service URL (test)', 'gimpay-woocommerce' ),
+				'type'    => 'gimpay_url',
+				'default' => GimPay_API::URL_UAT,
+			),
+			'data_service_url_live' => array(
+				'title'   => __( 'Data Service URL (live)', 'gimpay-woocommerce' ),
+				'type'    => 'gimpay_url',
+				'default' => GimPay_API::URL_PROD,
+			),
+			'advanced'              => array(
 				'title' => __( 'Advanced options', 'gimpay-woocommerce' ),
 				'type'  => 'title',
 			),
-			'lightbox_url'      => array(
-				'title'       => __( 'Lightbox script URL', 'gimpay-woocommerce' ),
-				'type'        => 'text',
-				/* translators: 1: test URL, 2: live URL. */
-				'description' => sprintf( __( 'Leave empty to use the default URL: %1$s (test) or %2$s (live).', 'gimpay-woocommerce' ), '<code>' . self::LIGHTBOX_UAT . '</code>', '<code>' . self::LIGHTBOX_PROD . '</code>' ),
-				'default'     => '',
-				'placeholder' => self::LIGHTBOX_PROD,
-			),
-			'data_service_url'  => array(
-				'title'       => __( 'Data Service URL', 'gimpay-woocommerce' ),
-				'type'        => 'text',
-				/* translators: 1: test URL, 2: live URL. */
-				'description' => sprintf( __( 'Leave empty to use the default URL: %1$s (test) or %2$s (live).', 'gimpay-woocommerce' ), '<code>' . GimPay_API::URL_UAT . '</code>', '<code>' . GimPay_API::URL_PROD . '</code>' ),
-				'default'     => '',
-				'placeholder' => GimPay_API::URL_PROD,
-			),
-			'amount_multiplier' => array(
+			'amount_multiplier'     => array(
 				'title'       => __( 'Amount unit', 'gimpay-woocommerce' ),
 				'type'        => 'select',
 				'description' => __( 'GIM Pay expects the amount in the smallest currency unit. XOF has no minor unit: keep "× 1" unless GIM Pay tells you otherwise.', 'gimpay-woocommerce' ),
@@ -210,14 +229,14 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 					'100' => __( '× 100 (1,000 XOF sent as 100000)', 'gimpay-woocommerce' ),
 				),
 			),
-			'api_verification'  => array(
+			'api_verification'      => array(
 				'title'       => __( 'Double verification', 'gimpay-woocommerce' ),
 				'type'        => 'checkbox',
 				'label'       => __( 'Confirm every payment with the GIM Pay Data Service (FilterTransactions)', 'gimpay-woocommerce' ),
 				'default'     => 'yes',
 				'description' => __( 'Strongly recommended. If confirmation fails, the order is put on hold instead of being completed. When disabled, only the signature relayed by the browser is trusted.', 'gimpay-woocommerce' ),
 			),
-			'debug'             => array(
+			'debug'                 => array(
 				'title'       => __( 'Debug log', 'gimpay-woocommerce' ),
 				'type'        => 'checkbox',
 				'label'       => __( 'Log exchanges', 'gimpay-woocommerce' ),
@@ -285,21 +304,23 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 		return $value;
 	}
 
-	public function validate_lightbox_url_field( $key, $value ) {
-		return $this->validate_https_url( $key, $value );
-	}
-
-	public function validate_data_service_url_field( $key, $value ) {
-		return $this->validate_https_url( $key, $value );
+	/**
+	 * Endpoint URL field: a regular text field, with its default URL shown below it.
+	 */
+	public function generate_gimpay_url_html( $key, $data ) {
+		/* translators: %s: default URL. */
+		$data['description'] = sprintf( __( 'Default: %s', 'gimpay-woocommerce' ), '<code>' . esc_html( $data['default'] ) . '</code>' );
+		$data['css']         = 'width: 100%; max-width: 40em;';
+		return $this->generate_text_html( $key, $data );
 	}
 
 	/**
-	 * Empty (= default) or a valid HTTPS URL; otherwise the previous value is kept.
+	 * Empty restores the default URL; an invalid or non-HTTPS URL keeps the previous value.
 	 */
-	private function validate_https_url( $key, $value ) {
+	public function validate_gimpay_url_field( $key, $value ) {
 		$value = trim( (string) $value );
 		if ( '' === $value ) {
-			return '';
+			return self::DEFAULT_URLS[ $key ];
 		}
 		if ( 'https' !== wp_parse_url( $value, PHP_URL_SCHEME ) || ! wp_http_validate_url( $value ) ) {
 			/* translators: %s: field name. */
