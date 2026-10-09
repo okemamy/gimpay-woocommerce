@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       GIM Pay for WooCommerce
  * Description:       Card payments (GIM-UEMOA, Visa, Mastercard) through GIM Pay (PayForm Plus / Lightbox).
- * Version:           1.2.0
+ * Version:           1.2.1
  * Author:            Okemamy
  * Author URI:        https://okemamy.com
  * Requires at least: 6.4
@@ -21,7 +21,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'GIMPAY_WC_VERSION', '1.2.0' );
+define( 'GIMPAY_WC_VERSION', '1.2.1' );
 define( 'GIMPAY_WC_FILE', __FILE__ );
 define( 'GIMPAY_WC_URL', plugin_dir_url( __FILE__ ) );
 
