@@ -1,7 +1,7 @@
 <?php
 /**
- * Client du "Data Service" GIM Pay (FilterTransactions), utilisé pour confirmer
- * côté serveur qu'une transaction est bien approuvée.
+ * Client for the GIM Pay "Data Service" (FilterTransactions), used to confirm
+ * server side that a transaction was approved.
  *
  * @package GimPay_WooCommerce
  */
@@ -23,7 +23,7 @@ class GimPay_API {
 	private $url;
 
 	/**
-	 * @param string $url URL FilterTransactions (URL_UAT, URL_PROD ou personnalisée).
+	 * @param string $url FilterTransactions URL (URL_UAT, URL_PROD or custom).
 	 */
 	public function __construct( $merchant_id, $terminal_id, $secret, $url ) {
 		$this->merchant_id = (string) $merchant_id;
@@ -33,13 +33,13 @@ class GimPay_API {
 	}
 
 	/**
-	 * Recherche les transactions associées à une référence marchand.
+	 * Finds the transactions matching a merchant reference.
 	 *
-	 * @param string $merchant_reference Référence envoyée à la Lightbox.
-	 * @return array|WP_Error Liste à plat des transactions.
+	 * @param string $merchant_reference Reference sent to the Lightbox.
+	 * @return array|WP_Error Flat list of transactions.
 	 */
 	public function find_by_reference( $merchant_reference ) {
-		// Format "YYMMDDHHMMSS", doit être unique par requête et par terminal.
+		// "YYMMDDHHMMSS" format, must be unique per request and per terminal.
 		$datetime = gmdate( 'ymdHis' );
 
 		$body = array(
@@ -82,7 +82,7 @@ class GimPay_API {
 	}
 
 	/**
-	 * Les transactions sont groupées par date ("DateTransactions") : on les met à plat.
+	 * Transactions are grouped by date ("DateTransactions"): flatten them.
 	 *
 	 * @param array $groups Valeur de "Transactions".
 	 * @return array
@@ -102,11 +102,11 @@ class GimPay_API {
 	}
 
 	/**
-	 * Retourne la première vente "Approved" correspondant à la référence et au montant.
+	 * Returns the first "Approved" sale matching the reference and the amount.
 	 *
-	 * @param array  $transactions       Résultat de find_by_reference().
-	 * @param string $merchant_reference Référence attendue.
-	 * @param int    $expected_amount    Montant attendu (unité envoyée à GIM Pay).
+	 * @param array  $transactions       Result of find_by_reference().
+	 * @param string $merchant_reference Expected reference.
+	 * @param int    $expected_amount    Expected amount (unit sent to GIM Pay).
 	 * @return array|null
 	 */
 	public static function find_approved( array $transactions, $merchant_reference, $expected_amount ) {

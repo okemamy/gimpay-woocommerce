@@ -1,30 +1,61 @@
-# GIM Pay pour WooCommerce
+# GIM Pay for WooCommerce
 
-Paiement par carte GIM-UEMOA, Visa et Mastercard via **GIM Pay – PayForm Plus (Lightbox)**.
-Compatible checkout en blocs et checkout classique, HPOS. Devise : XOF uniquement.
+Accept **GIM-UEMOA, Visa and Mastercard** card payments in CFA francs (XOF) on WooCommerce,
+through the **GIM Pay PayForm Plus Lightbox**.
+
+[![License: GPL v2+](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE)
+![WordPress 6.4+](https://img.shields.io/badge/WordPress-6.4%2B-21759b.svg)
+![WooCommerce 8.0+](https://img.shields.io/badge/WooCommerce-8.0%2B-96588a.svg)
+![PHP 7.4+](https://img.shields.io/badge/PHP-7.4%2B-777bb4.svg)
+
+## Features
+
+- Block-based checkout and classic checkout.
+- Compatible with High-Performance Order Storage (HPOS).
+- Requests are signed server side (HMAC SHA-256); the secret key never reaches the browser.
+- Every payment is verified: SecureHash on a fixed field list, merchant reference, amount and,
+  by default, a server-to-server confirmation with the GIM Pay Data Service.
+- Automatic reconciliation every 15 minutes, for customers who close the page right after paying.
+- "Check GIM Pay payment" order action for manual verification.
+- Credentials can be stored in `wp-config.php` instead of the database.
+- Translation ready, French translation included.
+
+## Requirements
+
+| | Minimum |
+|---|---|
+| WordPress | 6.4 |
+| WooCommerce | 8.0 |
+| PHP | 7.4 |
+| Store currency | XOF (the payment method is hidden for any other currency) |
+| GIM Pay account | Merchant ID, Terminal ID and secret key from your acquiring bank |
 
 ## Installation
 
-1. Copier le dossier `gimpay-woocommerce` dans `wp-content/plugins/` (ou le zipper et le téléverser).
-2. Activer l'extension, puis **WooCommerce › Réglages › Paiements › GIM Pay**.
-3. Renseigner les informations fournies par la banque (voir tableau ci-dessous).
-4. Laisser **Mode test (UAT)** coché pour les essais, le décocher pour la production.
+1. Download `gimpay-woocommerce.zip` from the [latest release](../../releases/latest).
+2. In WordPress, go to **Plugins › Add New › Upload Plugin**, upload the zip and activate it.
+3. Go to **WooCommerce › Settings › Payments › GIM Pay** and fill in the settings below.
+4. Keep **Test mode (UAT)** checked while testing; uncheck it to go live.
 
-| Réglage | Fiche banque | Utilisation |
+## Configuration
+
+| Setting | Where to find it | Used for |
 |---|---|---|
-| Merchant ID (MID) | MID passerelle GIM Pay (fourni avec la clé) | envoyé à la Lightbox, signé |
-| Terminal ID (TID) | ID terminal | envoyé à la Lightbox, signé |
-| Identifiant marchand de l'acquéreur | MID côté banque | information : journal + notes d'échec |
-| Outlet | Outlet | information : journal + notes d'échec |
-| Clé secrète du marchand | Clé sécurisée du marchand | signatures HMAC, jamais réaffichée |
-| URL du script Lightbox | ex. `https://checkout.gimpay.org/js/lightbox.js` | vide = URL par défaut test/prod |
-| URL du Data Service | `…/FilterTransactions` | vide = URL par défaut test/prod |
+| Merchant ID (MID) | GIM Pay gateway MID, provided with the secret key | Sent to the Lightbox, signed |
+| Terminal ID (TID) | Terminal ID | Sent to the Lightbox, signed |
+| Acquirer merchant ID | Bank-side merchant ID | Reference only: debug log and failed payment notes |
+| Outlet | Outlet number | Reference only: debug log and failed payment notes |
+| Merchant secret key | Merchant secret key (hexadecimal) | HMAC signatures; never displayed again |
+| Lightbox script URL | Only if GIM Pay gives you a different one | Empty = default test/live URL |
+| Data Service URL | Only if GIM Pay gives you a different one | Empty = default test/live URL |
+| Amount unit | Keep `× 1` for XOF | Amount sent to GIM Pay |
+| Double verification | Enabled by default | Confirms every payment with the Data Service |
+| Debug log | Disabled by default | WooCommerce › Status › Logs, source `gimpay` |
 
-Les URL ne sont à remplir que si GIM Pay ou la banque en communique une différente ;
-seules les URL HTTPS sont acceptées.
+Custom URLs must use HTTPS. Leaving the secret key field empty keeps the saved key.
 
-La clé secrète n'est jamais réaffichée dans l'admin (laisser le champ vide conserve
-la clé enregistrée). Pour ne pas la stocker en base, la définir dans `wp-config.php` :
+To keep credentials out of the database, define them in `wp-config.php`. Constants take
+precedence over the settings screen:
 
 ```php
 define( 'GIMPAY_MERCHANT_ID', '...' );
@@ -32,76 +63,81 @@ define( 'GIMPAY_TERMINAL_ID', '...' );
 define( 'GIMPAY_SECRET_KEY', '...' );
 ```
 
-Les constantes sont prioritaires sur les réglages. Supprimer l'extension efface ses réglages.
+Deleting the plugin removes its settings, including the secret key.
 
-## Fonctionnement
+## How it works
 
-1. Le client choisit GIM Pay et valide : la commande est créée en « En attente de paiement »
-   et il est redirigé vers la page *Payer la commande*.
-2. Le serveur signe la requête (HMAC SHA-256, Annexe B 5.1) avec une référence unique
-   `WC<id>T<timestamp>` et ouvre la Lightbox GIM Pay.
-3. À la fin du paiement, les données signées par GIM Pay sont renvoyées à `?wc-api=gimpay`.
-   Le serveur vérifie :
-   - le `SecureHash` (Annexe B 5.2) avec la clé secrète,
-   - que la référence appartient bien à la commande,
-   - que le montant correspond,
-   - (option « Double vérification », activée par défaut) que la transaction est
-     « Approved » dans le Data Service `FilterTransactions`.
-4. Tout est OK → commande payée. Doute (montant différent, Data Service injoignable ou
-   transaction introuvable) → « En attente » avec une note explicative.
+1. The customer picks GIM Pay and places the order. The order is created as *Pending payment*
+   and the customer is sent to the *Pay for order* page.
+2. The server signs the request (Appendix B 5.1 of the GIM Pay guide) with a unique reference
+   `WC<order id>T<timestamp>` and opens the GIM Pay Lightbox.
+3. When the payment completes, the browser relays the data signed by GIM Pay to
+   `?wc-api=gimpay`. The server checks:
+   - the `SecureHash` (Appendix B 5.2) with the secret key,
+   - that the reference belongs to the order,
+   - that the amount matches,
+   - with *Double verification*, that the transaction is `Approved` in the Data Service
+     (`FilterTransactions`).
+4. If everything matches, the order is marked as paid. If anything is doubtful (amount mismatch,
+   Data Service unreachable, transaction not found), the order is put *On hold* with an
+   explanatory note.
 
-Si le client ferme la page avant la confirmation, l'action de commande
-**« Vérifier le paiement GIM Pay »** (écran de la commande, admin) interroge le
-Data Service et valide la commande si un paiement approuvé est trouvé.
+If the customer closes the page before confirmation, the scheduled reconciliation or the
+**Check GIM Pay payment** order action queries the Data Service and completes the order
+once an approved payment is found.
 
-## Montant
+## Troubleshooting
 
-Le XOF n'a pas de centimes : 1 000 XOF est envoyé comme `1000` (réglage « Unité du
-montant » = × 1). Vérifié dans la Lightbox UAT, qui affiche « XOF 1,000 ».
+| Symptom | Meaning |
+|---|---|
+| `Issuer not found` (code 992) | The card network could not route the card to its issuing bank. This is not a plugin error. Typical causes: a UAT test card used in production, or the terminal is not enabled for that card scheme. Contact your acquiring bank and give them the identifiers shown in the order note. |
+| Customer paid, order still pending | Wait for the reconciliation (every 15 minutes) or run **Check GIM Pay payment** from the order screen. |
+| Payment method not shown | The store currency must be XOF, and MID, TID and secret key must all be set. |
 
-## Sécurité
+Response codes are listed in Appendix C of the GIM Pay PayForm Plus integration guide,
+available from your acquiring bank.
 
-- Signatures HMAC calculées côté serveur ; la clé ne quitte jamais le serveur.
-- Endpoint de retour protégé par nonce (403 si invalide) + clé de commande + SecureHash
-  sur une liste de champs fixe + contrôle de référence et de montant + Data Service.
-- Action admin protégée par `current_user_can( 'edit_shop_orders' )` ; hooks admin
-  chargés uniquement si `is_admin()`.
-- Entrées nettoyées (`sanitize_*`), sorties échappées (`esc_*`), aucune requête SQL directe.
+## Security
+
+- HMAC signatures are computed server side; the secret key never leaves the server and is
+  never written to the logs.
+- The callback endpoint is protected by a nonce, the order key, a SecureHash over a fixed
+  field list, reference and amount checks, and the Data Service confirmation.
+- The admin action requires the `edit_shop_orders` capability.
+- Inputs are sanitized, outputs are escaped, no direct SQL queries.
+
+To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
 ## Hooks
 
-| Hook | Type | Usage |
+| Hook | Type | Description |
 |---|---|---|
-| `gimpay_wc_icon` | filtre | URL de l'icône du moyen de paiement (défaut : logo GIM-UEMOA, chaîne vide pour le masquer) |
-| `gimpay_wc_lightbox_config` | filtre | Options supplémentaires de la Lightbox (couleurs, `AdditionalCustomerData`…) ; les champs signés ne peuvent pas être modifiés |
-| `gimpay_wc_payment_completed` | action | `( $order, $reference, $transaction_id )` après validation d'un paiement |
+| `gimpay_wc_icon` | filter | Payment method icon URL. Defaults to the GIM-UEMOA logo; return an empty string to hide it. |
+| `gimpay_wc_lightbox_config` | filter | `( array $config, WC_Order $order )`: extra Lightbox options (colors, `AdditionalCustomerData`…). Signed fields cannot be changed. |
+| `gimpay_wc_payment_completed` | action | `( WC_Order $order, string $reference, string $transaction_id )`: fired after a payment is validated. |
 
-## Traductions
+## Translations
 
-Chaînes sources en anglais, text domain `gimpay-woocommerce`, traduction française
-fournie dans `languages/` (`.po`, `.mo`, `.l10n.php`). Régénérer le modèle :
-`wp i18n make-pot . languages/gimpay-woocommerce.pot --exclude=tests`.
+Source strings are in English, text domain `gimpay-woocommerce`. The French translation lives in
+`languages/` (`.po`, `.mo` and `.l10n.php`). Translations into other languages are welcome; see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Journal
-
-Avec « Journal de débogage » coché : WooCommerce › État › Journaux, source `gimpay`.
-La clé secrète et le SecureHash ne sont jamais journalisés.
-
-## Tests
+## Development
 
 ```sh
-php tests/test-hash.php   # depuis la racine du projet (hors plugin) : 4 exemples de l'Annexe B
+php tests/test-hash.php     # checks the signatures against the guide's examples
+git archive --format=zip --prefix=gimpay-woocommerce/ -o gimpay-woocommerce.zip HEAD
 ```
 
----
+The zip leaves out tests and development files (see `.gitattributes`).
 
-Réalisé par [Okemamy](https://okemamy.com).
+## License
 
-## Développement
+[GPL-2.0-or-later](LICENSE).
 
-```sh
-php tests/test-hash.php          # vérifie les signatures avec les exemples du guide
-git archive --format=zip --prefix=gimpay-woocommerce/ -o ../gimpay-woocommerce.zip HEAD
-```
+This project is not affiliated with GIM-UEMOA or PaySky. GIM Pay, GIM-UEMOA and their logos
+are trademarks of their respective owners.
 
-Le zip produit exclut `tests/` et les fichiers git (voir `.gitattributes`).
+## Credits
+
+Made by [Okemamy](https://okemamy.com).

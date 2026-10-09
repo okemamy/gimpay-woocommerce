@@ -1,7 +1,7 @@
 <?php
 /**
- * Hooks d'administration, chargés uniquement si is_admin().
- * is_admin() ne garantit pas les droits : chaque action vérifie la capacité.
+ * Admin hooks, loaded only when is_admin().
+ * is_admin() does not imply any permission: every action checks a capability.
  *
  * @package GimPay_WooCommerce
  */
@@ -19,9 +19,9 @@ add_filter(
 );
 
 /*
- * Texte suggéré pour la politique de confidentialité (Réglages › Confidentialité).
- * Pas d'exportateur/effaceur de données : l'extension ne stocke aucune donnée
- * personnelle en plus de la commande WooCommerce (qui gère déjà export/effacement).
+ * Suggested privacy policy text (Settings › Privacy).
+ * No personal data exporter/eraser: the plugin stores no personal data beyond
+ * the WooCommerce order, which already handles export and erasure.
  */
 add_action(
 	'admin_init',
@@ -38,7 +38,7 @@ add_action(
 	}
 );
 
-// Action "Vérifier le paiement GIM Pay" dans l'écran de commande.
+// "Check GIM Pay payment" action on the order screen.
 add_filter(
 	'woocommerce_order_actions',
 	function ( $actions, $order = null ) {
@@ -51,7 +51,7 @@ add_filter(
 	2
 );
 
-// WooCommerce vérifie déjà son nonce d'enregistrement de commande avant cette action.
+// WooCommerce has already verified its order save nonce before this action.
 add_action(
 	'woocommerce_order_action_gimpay_check_payment',
 	function ( $order ) {

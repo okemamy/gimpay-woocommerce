@@ -39,7 +39,7 @@ Please review GIM Pay's terms and privacy policy with your acquiring bank before
 1. Upload the `gimpay-woocommerce` folder to `/wp-content/plugins/`, or upload the zip from Plugins > Add New.
 2. Activate the plugin (WooCommerce must be active).
 3. Set the store currency to CFA franc (XOF).
-4. Go to WooCommerce > Settings > Payments > GIM Pay and enter the Merchant ID, Terminal ID and secret key provided by your bank.
+4. Go to WooCommerce > Settings > Payments > GIM Pay and enter the Merchant ID, Terminal ID and secret key provided by your bank. The acquirer merchant ID and outlet are optional and only used to help the bank support team.
 5. Keep "Test mode (UAT)" checked while testing; uncheck it to go live.
 
 Optionally define the credentials in `wp-config.php`:
@@ -57,6 +57,10 @@ XOF only. The payment method is hidden for any other store currency.
 = The customer paid but the order is still pending =
 
 The reconciliation task checks unpaid GIM Pay orders from the last 24 hours every 15 minutes. You can also open the order and run the "Check GIM Pay payment" action.
+
+= The payment fails with "Issuer not found" (code 992) =
+
+The card network could not route the card to its issuing bank; this is not a plugin error. It usually means a test card was used in production, or the terminal is not enabled for that card scheme. Contact your acquiring bank with the identifiers shown in the order note.
 
 = Where are the logs? =
 
@@ -87,4 +91,6 @@ Enable "Debug log" in the settings, then go to WooCommerce > Status > Logs and p
 
 == Credits ==
 
-Made by [Okemamy](https://okemamy.com).
+Made by [Okemamy](https://okemamy.com). Source code and issue tracker: https://github.com/okemamy/gimpay-woocommerce
+
+This plugin is not affiliated with GIM-UEMOA or PaySky.

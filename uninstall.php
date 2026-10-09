@@ -1,6 +1,6 @@
 <?php
 /**
- * Suppression de l'extension : on efface les réglages, dont la clé secrète.
+ * Plugin deletion: removes the settings, including the secret key.
  *
  * @package GimPay_WooCommerce
  */
@@ -10,6 +10,6 @@ defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 delete_option( 'woocommerce_gimpay_settings' );
 wp_clear_scheduled_hook( 'gimpay_wc_reconcile' );
 
-// Les métadonnées de commande (_gimpay_*) sont conservées volontairement : elles
-// font partie de l'historique comptable des commandes et ne contiennent aucune
-// donnée personnelle (références techniques et montants uniquement).
+// Order metadata (_gimpay_*) is intentionally kept: it is part of the orders'
+// accounting history and holds no personal data (technical references and
+// amounts only).

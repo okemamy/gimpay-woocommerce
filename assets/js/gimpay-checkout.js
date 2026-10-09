@@ -28,7 +28,7 @@
 		} );
 	}
 
-	// Chaque tentative utilise une nouvelle référence signée : on recharge la page.
+	// Each attempt needs a new signed reference: reload the page.
 	function retry() {
 		payButton.disabled = true;
 		window.location.reload();

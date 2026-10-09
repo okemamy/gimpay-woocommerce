@@ -1,4 +1,4 @@
-/* Enregistre GIM Pay dans le checkout en blocs de WooCommerce (sans étape de build). */
+/* Registers GIM Pay in the WooCommerce block-based checkout (no build step). */
 ( function () {
 	'use strict';
 

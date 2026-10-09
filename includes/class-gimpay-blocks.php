@@ -1,6 +1,6 @@
 <?php
 /**
- * Intégration avec le checkout en blocs de WooCommerce.
+ * WooCommerce block-based checkout integration.
  *
  * @package GimPay_WooCommerce
  */

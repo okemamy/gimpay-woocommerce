@@ -1,13 +1,13 @@
 <?php
 /**
- * Réconciliation planifiée (WP-Cron).
+ * Scheduled reconciliation (WP-Cron).
  *
- * Si le client ferme la page après avoir payé mais avant la confirmation, la
- * commande reste non payée. Toutes les 15 minutes, on interroge le Data
- * Service pour les commandes GIM Pay non payées des dernières 24 h.
+ * If the customer closes the page after paying but before confirmation, the
+ * order stays unpaid. Every 15 minutes, the Data Service is queried for
+ * unpaid GIM Pay orders from the last 24 hours.
  *
- * WP-Cron ne s'exécute qu'au chargement d'une page : le délai n'est pas garanti,
- * la tâche est donc conçue pour tolérer les retards.
+ * WP-Cron only runs on page loads, so timing is not guaranteed and the task
+ * is designed to tolerate delays.
  *
  * @package GimPay_WooCommerce
  */
@@ -29,7 +29,7 @@ add_filter(
 );
 
 /**
- * Planifie la tâche si elle ne l'est pas (activation, ou mise à jour sans réactivation).
+ * Schedules the task if needed (on activation, or after an update without reactivation).
  */
 function gimpay_schedule_reconciliation() {
 	if ( ! wp_next_scheduled( GIMPAY_CRON_HOOK ) ) {
@@ -51,8 +51,8 @@ add_action(
 			return;
 		}
 
-		// "cancelled" : WooCommerce annule les commandes impayées après le délai de
-		// réservation du stock, même si le client a payé entre-temps.
+		// "cancelled": WooCommerce cancels unpaid orders once the hold stock
+		// duration expires, even if the customer paid in the meantime.
 		$orders = wc_get_orders(
 			array(
 				'payment_method' => 'gimpay',
@@ -66,10 +66,10 @@ add_action(
 
 		foreach ( $orders as $order ) {
 			if ( ! $order->get_meta( GimPay_Gateway::META_REFERENCES ) ) {
-				continue; // La Lightbox n'a jamais été ouverte.
+				continue; // The Lightbox was never opened.
 			}
 			$message = $gateway->check_order_payment( $order, true );
-			// Note uniquement en cas de succès : pas de bruit toutes les 15 minutes.
+			// Add a note on success only, to avoid noise every 15 minutes.
 			if ( $order->is_paid() ) {
 				$order->add_order_note( $message );
 			}

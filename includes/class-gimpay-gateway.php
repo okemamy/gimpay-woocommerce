@@ -1,21 +1,21 @@
 <?php
 /**
- * Passerelle de paiement WooCommerce GIM Pay (PayForm Plus / Lightbox).
+ * GIM Pay WooCommerce payment gateway (PayForm Plus / Lightbox).
  *
- * Flux :
- *  1. process_payment() redirige vers la page "Payer la commande" (order-pay).
- *  2. Cette page signe la requête côté serveur et ouvre la Lightbox GIM Pay.
- *  3. Le completeCallback JS renvoie les données signées par GIM Pay à
- *     ?wc-api=gimpay ; le serveur vérifie le nonce, la clé de commande, le
- *     SecureHash, la référence et le montant, puis (option) confirme via le
- *     Data Service avant de valider.
+ * Flow:
+ *  1. process_payment() redirects to the "Pay for order" page (order-pay).
+ *  2. That page signs the request server side and opens the GIM Pay Lightbox.
+ *  3. The JS completeCallback posts the data signed by GIM Pay to
+ *     ?wc-api=gimpay; the server checks the nonce, the order key, the
+ *     SecureHash, the reference and the amount, then (optionally) confirms
+ *     with the Data Service before completing the order.
  *
- * Hooks proposés :
+ * Available hooks:
  *  - filter gimpay_wc_icon                ( string $url )
  *  - filter gimpay_wc_lightbox_config     ( array $config, WC_Order $order )
  *  - action gimpay_wc_payment_completed   ( WC_Order $order, string $reference, string $transaction_id )
  *
- * Les messages de journal (logs) restent en anglais et ne sont pas traduits.
+ * Log messages are intentionally left untranslated.
  *
  * @package GimPay_WooCommerce
  */
@@ -33,7 +33,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	const NONCE_ACTION    = 'gimpay_callback_';
 
 	/**
-	 * Identifiants pouvant être définis dans wp-config.php (prioritaires sur la base).
+	 * Credentials that can be defined in wp-config.php (take precedence over the database).
 	 */
 	const CREDENTIAL_CONSTANTS = array(
 		'merchant_id' => 'GIMPAY_MERCHANT_ID',
@@ -98,7 +98,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Logo à hauteur fixe : certains thèmes l'affichent sinon en taille réelle.
+	 * Fixed-height logo: some themes would otherwise display it at full size.
 	 */
 	public function get_icon() {
 		$icon = $this->icon ? '<img src="' . esc_url( $this->icon ) . '" alt="GIM-UEMOA" width="54" height="32" style="height:32px;width:auto;" />' : '';
@@ -111,7 +111,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * URL saisie dans les réglages, ou URL par défaut de l'environnement choisi.
+	 * URL from the settings, or the default URL for the selected environment.
 	 */
 	private function get_url_option( $key, $uat, $prod ) {
 		$url = trim( (string) $this->get_option( $key ) );
@@ -226,7 +226,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 			),
 		);
 
-		// Identifiant défini dans wp-config.php : le champ devient une simple mention.
+		// Credential defined in wp-config.php: the field becomes a read-only notice.
 		foreach ( self::CREDENTIAL_CONSTANTS as $key => $constant ) {
 			if ( defined( $constant ) ) {
 				$this->form_fields[ $key ] = array(
@@ -240,7 +240,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Champ de clé secrète qui ne renvoie jamais la valeur enregistrée dans le HTML.
+	 * Secret key field that never outputs the saved value in the HTML.
 	 */
 	public function generate_gimpay_secret_html( $key, $data ) {
 		$field_key = $this->get_field_key( $key );
@@ -271,7 +271,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Valide la clé secrète à l'enregistrement ; vide = conserver la clé existante.
+	 * Validates the secret key on save; empty keeps the existing key.
 	 */
 	public function validate_secret_key_field( $key, $value ) {
 		$value = preg_replace( '/\s+/', '', (string) $value );
@@ -294,7 +294,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * URL vide (= défaut) ou URL HTTPS valide ; sinon on garde l'ancienne valeur.
+	 * Empty (= default) or a valid HTTPS URL; otherwise the previous value is kept.
 	 */
 	private function validate_https_url( $key, $value ) {
 		$value = trim( (string) $value );
@@ -331,7 +331,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Étape 1 : la commande est créée, on envoie le client sur la page de paiement.
+	 * Step 1: the order is created, send the customer to the payment page.
 	 */
 	public function process_payment( $order_id ) {
 		$order = wc_get_order( $order_id );
@@ -343,14 +343,14 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Montant envoyé à GIM Pay, en entier.
+	 * Amount sent to GIM Pay, as an integer.
 	 */
 	public function get_gimpay_amount( WC_Order $order ) {
 		return (string) (int) round( (float) $order->get_total() * $this->amount_multiplier );
 	}
 
 	/**
-	 * Étape 2 : page "Payer la commande" qui ouvre la Lightbox.
+	 * Step 2: "Pay for order" page that opens the Lightbox.
 	 */
 	public function receipt_page( $order_id ) {
 		$order = wc_get_order( $order_id );
@@ -358,8 +358,8 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
-		// Nouvelle référence à chaque affichage : un nouvel essai après un refus
-		// ne doit pas être rejeté comme doublon par GIM Pay.
+		// New reference on every display: a retry after a decline must not be
+		// rejected by GIM Pay as a duplicate.
 		$reference = 'WC' . $order->get_id() . 'T' . time() . wp_rand( 10, 99 );
 		$amount    = $this->get_gimpay_amount( $order );
 		$datetime  = gmdate( 'YmdHi' );
@@ -379,15 +379,15 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 		);
 
 		/**
-		 * Options supplémentaires de la Lightbox (couleurs, AdditionalCustomerData…).
-		 * Les champs signés (MID, TID, AmountTrxn, MerchantReference, TrxDateTime,
-		 * SecureHash) sont rétablis après le filtre.
+		 * Extra Lightbox options (colors, AdditionalCustomerData…).
+		 * Signed fields (MID, TID, AmountTrxn, MerchantReference, TrxDateTime,
+		 * SecureHash) are restored after the filter.
 		 */
 		$config = array_merge( (array) apply_filters( 'gimpay_wc_lightbox_config', $config, $order ), $config );
 
 		$this->log( 'Opening Lightbox for order #' . $order->get_id() . ': ' . wp_json_encode( array_diff_key( $config, array( 'SecureHash' => 1 ) ) ) . $this->bank_identifiers() );
 
-		wp_enqueue_script( 'gimpay-lightbox', $this->lightbox_url, array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- script externe versionné par GIM Pay.
+		wp_enqueue_script( 'gimpay-lightbox', $this->lightbox_url, array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- external script versioned by GIM Pay.
 		wp_enqueue_script( 'gimpay-checkout', GIMPAY_WC_URL . 'assets/js/gimpay-checkout.js', array( 'gimpay-lightbox' ), GIMPAY_WC_VERSION, true );
 		wp_localize_script(
 			'gimpay-checkout',
@@ -419,10 +419,10 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Étape 3 : réception des callbacks Lightbox relayés par le navigateur.
+	 * Step 3: receives the Lightbox callbacks relayed by the browser.
 	 *
-	 * Point d'entrée public (clients invités compris) : pas de capacité à
-	 * vérifier, l'autorisation repose sur le nonce + la clé de commande.
+	 * Public endpoint (guest customers included): there is no capability to
+	 * check, authorization relies on the nonce + the order key.
 	 */
 	public function handle_callback() {
 		$payload = json_decode( (string) file_get_contents( 'php://input' ), true );
@@ -445,7 +445,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 		$data  = self::sanitize_data( isset( $payload['data'] ) ? $payload['data'] : array() );
 		$event = isset( $payload['event'] ) ? sanitize_key( (string) $payload['event'] ) : '';
 
-		// Pas de nom du porteur ni de numéro de carte (même masqué) dans les journaux.
+		// Never log the cardholder name or the card number (even masked).
 		$this->log( 'Callback "' . $event . '" for order #' . $order->get_id() . ': ' . wp_json_encode( array_diff_key( $data, array_flip( array( 'PayerName', 'PayerAccount', 'SecureHash' ) ) ) ) );
 
 		if ( 'complete' === $event ) {
@@ -474,7 +474,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 		$expected_amount = (int) $references[ $reference ];
 
 		if ( $order->is_paid() ) {
-			// Deux onglets / deux tentatives payées : le client a pu être débité deux fois.
+			// Two tabs / two paid attempts: the customer may have been charged twice.
 			if ( $hash_ok && $reference !== $order->get_meta( '_gimpay_reference' ) && ! $order->get_meta( '_gimpay_duplicate_' . $reference ) ) {
 				$order->update_meta_data( '_gimpay_duplicate_' . $reference, 1 );
 				$order->save();
@@ -500,8 +500,8 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 			wp_send_json_success( array( 'redirect' => $redirect ) );
 		}
 
-		// Le Data Service (serveur à serveur) fait foi : il valide même si le format
-		// de signature du callback diffère de la documentation.
+		// The Data Service (server to server) is authoritative: it validates the
+		// payment even if the callback signature format differs from the docs.
 		$result = $this->get_api()->find_by_reference( $reference );
 		if ( is_wp_error( $result ) ) {
 			$this->log( 'Data Service error: ' . $result->get_error_message(), 'error' );
@@ -550,14 +550,14 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * En pratique la Lightbox ne renvoie que {"error": "..."} sans signature :
-	 * l'information sert uniquement de note, elle ne change jamais l'état de la commande.
+	 * In practice the Lightbox only returns {"error": "..."} without a signature:
+	 * it is only used as an order note and never changes the order status.
 	 */
 	private function handle_error( WC_Order $order, array $data ) {
 		$message = isset( $data['error'] ) ? $data['error'] : ( isset( $data['ErrorMessage'] ) ? $data['ErrorMessage'] : __( 'Unknown error', 'gimpay-woocommerce' ) );
 		$message = mb_substr( $message, 0, 200 );
 
-		// Plafond : l'endpoint est appelable par quiconque connaît la clé de commande.
+		// Capped: anyone who knows the order key can call this endpoint.
 		$count = (int) $order->get_meta( '_gimpay_error_notes' );
 		if ( ! $order->is_paid() && $count < self::MAX_ERROR_NOTES ) {
 			$order->update_meta_data( '_gimpay_error_notes', $count + 1 );
@@ -570,7 +570,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Identifiants côté banque (référence pour le support), ex. " [Acquirer MID 123, Outlet 456, TID 789]".
+	 * Bank-side identifiers (for support requests), e.g. " [Acquirer MID 123, Outlet 456, TID 789]".
 	 */
 	private function bank_identifiers() {
 		$ids = array_filter(
@@ -592,7 +592,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Références envoyées à GIM Pay pour cette commande : [référence => montant].
+	 * References sent to GIM Pay for this order: [reference => amount].
 	 */
 	private static function get_references( WC_Order $order ) {
 		$references = $order->get_meta( self::META_REFERENCES );
@@ -600,12 +600,12 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Le guide (Annexe B 5.2) signe : Amount, Currency, MerchantId,
+	 * The guide (Appendix B 5.2) signs: Amount, Currency, MerchantId,
 	 * MerchantReference, PaidThrough, TerminalId, TxnDate. MerchantId et
-	 * TerminalId ne sont pas renvoyés par la Lightbox : on prend la configuration.
+	 * TerminalId are not returned by the Lightbox: the configured values are used.
 	 *
-	 * La liste de champs est FIXE : ne jamais signer "les champs reçus", sinon la
-	 * signature de la requête Lightbox (visible dans la page) serait acceptée
+	 * The field list is FIXED: never sign "whatever fields were received",
+	 * otherwise the Lightbox request signature (visible in the page) would be accepted
 	 * comme preuve de paiement.
 	 */
 	private function verify_complete_hash( array $data ) {
@@ -628,13 +628,13 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Interroge le Data Service et valide la commande si un paiement approuvé
-	 * est trouvé. Appelé par l'action admin (capacité vérifiée par l'appelant)
-	 * et par la réconciliation planifiée (WP-Cron).
+	 * Queries the Data Service and completes the order if an approved payment
+	 * is found. Called by the admin action (capability checked by the caller)
+	 * and by the scheduled reconciliation (WP-Cron).
 	 *
-	 * @param WC_Order $order     Commande.
-	 * @param bool     $automatic true depuis la tâche planifiée.
-	 * @return string Message pour la note de commande.
+	 * @param WC_Order $order     Order.
+	 * @param bool     $automatic True when called from the scheduled task.
+	 * @return string Message for the order note.
 	 */
 	public function check_order_payment( WC_Order $order, $automatic = false ) {
 		if ( $order->is_paid() ) {
@@ -672,7 +672,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Ne garde que des scalaires, convertis en chaînes.
+	 * Keeps scalar values only, cast to strings.
 	 */
 	private static function sanitize_data( $data ) {
 		$clean = array();

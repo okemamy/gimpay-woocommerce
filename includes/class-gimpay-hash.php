@@ -1,10 +1,10 @@
 <?php
 /**
- * Calcul des SecureHash GIM Pay (Annexe B du guide d'intégration PayForm Plus).
+ * GIM Pay SecureHash computation (Appendix B of the PayForm Plus integration guide).
  *
- * HMAC SHA-256 sur la chaîne "Cle1=Val1&Cle2=Val2..." (clés triées par ordre
- * croissant), avec comme clé la valeur hex-décodée de la "Merchant Secret Key".
- * Le résultat est encodé en hexadécimal majuscule.
+ * HMAC SHA-256 over the string "Key1=Val1&Key2=Val2..." (keys sorted in
+ * ascending order), keyed with the hex-decoded "Merchant Secret Key".
+ * The result is encoded as uppercase hexadecimal.
  *
  * @package GimPay_WooCommerce
  */
@@ -14,9 +14,9 @@ defined( 'ABSPATH' ) || exit;
 class GimPay_Hash {
 
 	/**
-	 * Construit la chaîne à signer à partir d'un tableau clé => valeur.
+	 * Builds the string to sign from a key => value array.
 	 *
-	 * @param array $fields Champs à signer.
+	 * @param array $fields Fields to sign.
 	 * @return string
 	 */
 	public static function build_message( array $fields ) {
@@ -34,11 +34,11 @@ class GimPay_Hash {
 	}
 
 	/**
-	 * Calcule le SecureHash (hex majuscule).
+	 * Computes the SecureHash (uppercase hex).
 	 *
-	 * @param array  $fields     Champs à signer.
-	 * @param string $secret_hex Clé secrète marchand (hexadécimale).
-	 * @return string Chaîne vide si la clé est invalide.
+	 * @param array  $fields     Fields to sign.
+	 * @param string $secret_hex Merchant secret key (hexadecimal).
+	 * @return string Empty string if the key is invalid.
 	 */
 	public static function sign( array $fields, $secret_hex ) {
 		$key = self::decode_key( $secret_hex );
@@ -50,11 +50,11 @@ class GimPay_Hash {
 	}
 
 	/**
-	 * Vérifie un SecureHash reçu (comparaison insensible à la casse, à temps constant).
+	 * Verifies a received SecureHash (case-insensitive, constant-time comparison).
 	 *
-	 * @param array  $fields     Champs signés (sans SecureHash).
-	 * @param string $received   Hash reçu.
-	 * @param string $secret_hex Clé secrète marchand.
+	 * @param array  $fields     Signed fields (without SecureHash).
+	 * @param string $received   Received hash.
+	 * @param string $secret_hex Merchant secret key.
 	 * @return bool
 	 */
 	public static function verify( array $fields, $received, $secret_hex ) {
@@ -67,7 +67,7 @@ class GimPay_Hash {
 	}
 
 	/**
-	 * Hash de la requête Lightbox (Annexe B 5.1).
+	 * Lightbox request hash (Appendix B 5.1).
 	 */
 	public static function lightbox_request( $amount, $datetime, $merchant_id, $merchant_reference, $terminal_id, $secret_hex ) {
 		return self::sign(
@@ -83,7 +83,7 @@ class GimPay_Hash {
 	}
 
 	/**
-	 * Hash de la requête Data Service / FilterTransactions (Annexe B 5.4).
+	 * Data Service / FilterTransactions request hash (Appendix B 5.4).
 	 */
 	public static function data_service_request( $datetime, $merchant_id, $terminal_id, $secret_hex ) {
 		return self::sign(
@@ -97,9 +97,9 @@ class GimPay_Hash {
 	}
 
 	/**
-	 * Décode la clé hexadécimale. Retourne '' si invalide.
+	 * Decodes the hexadecimal key. Returns '' if invalid.
 	 *
-	 * @param string $secret_hex Clé.
+	 * @param string $secret_hex Key.
 	 * @return string
 	 */
 	private static function decode_key( $secret_hex ) {

@@ -1,4 +1,8 @@
-# Exclus du zip de distribution (git archive)
+# Excluded from the distribution zip (git archive)
 /.gitignore export-ignore
 /.gitattributes export-ignore
+/.github export-ignore
 /tests export-ignore
+/CHANGELOG.md export-ignore
+/CONTRIBUTING.md export-ignore
+/SECURITY.md export-ignore
