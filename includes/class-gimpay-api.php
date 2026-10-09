@@ -19,14 +19,17 @@ class GimPay_API {
 	private $terminal_id;
 	/** @var string */
 	private $secret;
-	/** @var bool */
-	private $sandbox;
+	/** @var string */
+	private $url;
 
-	public function __construct( $merchant_id, $terminal_id, $secret, $sandbox ) {
+	/**
+	 * @param string $url URL FilterTransactions (URL_UAT, URL_PROD ou personnalisée).
+	 */
+	public function __construct( $merchant_id, $terminal_id, $secret, $url ) {
 		$this->merchant_id = (string) $merchant_id;
 		$this->terminal_id = (string) $terminal_id;
 		$this->secret      = (string) $secret;
-		$this->sandbox     = (bool) $sandbox;
+		$this->url         = (string) $url;
 	}
 
 	/**
@@ -50,7 +53,7 @@ class GimPay_API {
 		);
 
 		$response = wp_remote_post(
-			$this->sandbox ? self::URL_UAT : self::URL_PROD,
+			$this->url,
 			array(
 				'timeout' => 30,
 				'headers' => array( 'Content-Type' => 'application/json' ),

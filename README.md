@@ -7,8 +7,21 @@ Compatible checkout en blocs et checkout classique, HPOS. Devise : XOF uniquemen
 
 1. Copier le dossier `gimpay-woocommerce` dans `wp-content/plugins/` (ou le zipper et le téléverser).
 2. Activer l'extension, puis **WooCommerce › Réglages › Paiements › GIM Pay**.
-3. Renseigner Merchant ID, Terminal ID et clé secrète (hexadécimale) fournis par la banque.
+3. Renseigner les informations fournies par la banque (voir tableau ci-dessous).
 4. Laisser **Mode test (UAT)** coché pour les essais, le décocher pour la production.
+
+| Réglage | Fiche banque | Utilisation |
+|---|---|---|
+| Merchant ID (MID) | MID passerelle GIM Pay (fourni avec la clé) | envoyé à la Lightbox, signé |
+| Terminal ID (TID) | ID terminal | envoyé à la Lightbox, signé |
+| Identifiant marchand de l'acquéreur | MID côté banque | information : journal + notes d'échec |
+| Outlet | Outlet | information : journal + notes d'échec |
+| Clé secrète du marchand | Clé sécurisée du marchand | signatures HMAC, jamais réaffichée |
+| URL du script Lightbox | ex. `https://checkout.gimpay.org/js/lightbox.js` | vide = URL par défaut test/prod |
+| URL du Data Service | `…/FilterTransactions` | vide = URL par défaut test/prod |
+
+Les URL ne sont à remplir que si GIM Pay ou la banque en communique une différente ;
+seules les URL HTTPS sont acceptées.
 
 La clé secrète n'est jamais réaffichée dans l'admin (laisser le champ vide conserve
 la clé enregistrée). Pour ne pas la stocker en base, la définir dans `wp-config.php` :

@@ -49,6 +49,14 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	public $terminal_id;
 	/** @var string */
 	public $secret_key;
+	/** @var string */
+	public $acquirer_merchant_id;
+	/** @var string */
+	public $outlet_id;
+	/** @var string */
+	public $lightbox_url;
+	/** @var string */
+	public $data_service_url;
 	/** @var int */
 	public $amount_multiplier;
 	/** @var bool */
@@ -76,6 +84,10 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 		$this->merchant_id       = $this->get_credential( 'merchant_id' );
 		$this->terminal_id       = $this->get_credential( 'terminal_id' );
 		$this->secret_key        = $this->get_credential( 'secret_key' );
+		$this->acquirer_merchant_id = trim( (string) $this->get_option( 'acquirer_merchant_id' ) );
+		$this->outlet_id            = trim( (string) $this->get_option( 'outlet_id' ) );
+		$this->lightbox_url         = $this->get_url_option( 'lightbox_url', self::LIGHTBOX_UAT, self::LIGHTBOX_PROD );
+		$this->data_service_url     = $this->get_url_option( 'data_service_url', GimPay_API::URL_UAT, GimPay_API::URL_PROD );
 		$this->amount_multiplier = max( 1, (int) $this->get_option( 'amount_multiplier', '1' ) );
 		$this->api_verification  = 'yes' === $this->get_option( 'api_verification', 'yes' );
 		$this->debug             = 'yes' === $this->get_option( 'debug', 'no' );
@@ -96,6 +108,14 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	private function get_credential( $key ) {
 		$constant = self::CREDENTIAL_CONSTANTS[ $key ];
 		return trim( (string) ( defined( $constant ) ? constant( $constant ) : $this->get_option( $key ) ) );
+	}
+
+	/**
+	 * URL saisie dans les réglages, ou URL par défaut de l'environnement choisi.
+	 */
+	private function get_url_option( $key, $uat, $prod ) {
+		$url = trim( (string) $this->get_option( $key ) );
+		return '' !== $url ? $url : ( $this->sandbox ? $uat : $prod );
 	}
 
 	public function init_form_fields() {
@@ -142,6 +162,18 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 				'description' => __( '6 to 8 characters.', 'gimpay-woocommerce' ),
 				'default'     => '',
 			),
+			'acquirer_merchant_id' => array(
+				'title'       => __( 'Acquirer merchant ID', 'gimpay-woocommerce' ),
+				'type'        => 'text',
+				'description' => __( 'Merchant ID on the bank (acquirer) side. For reference only: it is not sent to GIM Pay, but it is shown in the debug log and in failed payment order notes, to help the bank support team.', 'gimpay-woocommerce' ),
+				'default'     => '',
+			),
+			'outlet_id'         => array(
+				'title'       => __( 'Outlet', 'gimpay-woocommerce' ),
+				'type'        => 'text',
+				'description' => __( 'Outlet number provided by the bank. For reference only, like the acquirer merchant ID.', 'gimpay-woocommerce' ),
+				'default'     => '',
+			),
 			'secret_key'        => array(
 				'title'       => __( 'Merchant secret key', 'gimpay-woocommerce' ),
 				'type'        => 'gimpay_secret',
@@ -151,6 +183,22 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 			'advanced'          => array(
 				'title' => __( 'Advanced options', 'gimpay-woocommerce' ),
 				'type'  => 'title',
+			),
+			'lightbox_url'      => array(
+				'title'       => __( 'Lightbox script URL', 'gimpay-woocommerce' ),
+				'type'        => 'text',
+				/* translators: 1: test URL, 2: live URL. */
+				'description' => sprintf( __( 'Leave empty to use the default URL: %1$s (test) or %2$s (live).', 'gimpay-woocommerce' ), '<code>' . self::LIGHTBOX_UAT . '</code>', '<code>' . self::LIGHTBOX_PROD . '</code>' ),
+				'default'     => '',
+				'placeholder' => self::LIGHTBOX_PROD,
+			),
+			'data_service_url'  => array(
+				'title'       => __( 'Data Service URL', 'gimpay-woocommerce' ),
+				'type'        => 'text',
+				/* translators: 1: test URL, 2: live URL. */
+				'description' => sprintf( __( 'Leave empty to use the default URL: %1$s (test) or %2$s (live).', 'gimpay-woocommerce' ), '<code>' . GimPay_API::URL_UAT . '</code>', '<code>' . GimPay_API::URL_PROD . '</code>' ),
+				'default'     => '',
+				'placeholder' => GimPay_API::URL_PROD,
 			),
 			'amount_multiplier' => array(
 				'title'       => __( 'Amount unit', 'gimpay-woocommerce' ),
@@ -237,6 +285,30 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 		return $value;
 	}
 
+	public function validate_lightbox_url_field( $key, $value ) {
+		return $this->validate_https_url( $key, $value );
+	}
+
+	public function validate_data_service_url_field( $key, $value ) {
+		return $this->validate_https_url( $key, $value );
+	}
+
+	/**
+	 * URL vide (= défaut) ou URL HTTPS valide ; sinon on garde l'ancienne valeur.
+	 */
+	private function validate_https_url( $key, $value ) {
+		$value = trim( (string) $value );
+		if ( '' === $value ) {
+			return '';
+		}
+		if ( 'https' !== wp_parse_url( $value, PHP_URL_SCHEME ) || ! wp_http_validate_url( $value ) ) {
+			/* translators: %s: field name. */
+			WC_Admin_Settings::add_error( sprintf( __( 'GIM Pay: "%s" must be a valid HTTPS URL.', 'gimpay-woocommerce' ), $this->form_fields[ $key ]['title'] ) );
+			return $this->get_option( $key );
+		}
+		return esc_url_raw( $value );
+	}
+
 	public function is_configured() {
 		return '' !== $this->merchant_id && '' !== $this->terminal_id && '' !== $this->secret_key;
 	}
@@ -313,9 +385,9 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 		 */
 		$config = array_merge( (array) apply_filters( 'gimpay_wc_lightbox_config', $config, $order ), $config );
 
-		$this->log( 'Opening Lightbox for order #' . $order->get_id() . ': ' . wp_json_encode( array_diff_key( $config, array( 'SecureHash' => 1 ) ) ) );
+		$this->log( 'Opening Lightbox for order #' . $order->get_id() . ': ' . wp_json_encode( array_diff_key( $config, array( 'SecureHash' => 1 ) ) ) . $this->bank_identifiers() );
 
-		wp_enqueue_script( 'gimpay-lightbox', $this->sandbox ? self::LIGHTBOX_UAT : self::LIGHTBOX_PROD, array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- script externe versionné par GIM Pay.
+		wp_enqueue_script( 'gimpay-lightbox', $this->lightbox_url, array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- script externe versionné par GIM Pay.
 		wp_enqueue_script( 'gimpay-checkout', GIMPAY_WC_URL . 'assets/js/gimpay-checkout.js', array( 'gimpay-lightbox' ), GIMPAY_WC_VERSION, true );
 		wp_localize_script(
 			'gimpay-checkout',
@@ -491,10 +563,32 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 			$order->update_meta_data( '_gimpay_error_notes', $count + 1 );
 			$order->save();
 			/* translators: %s: error message returned by GIM Pay. */
-			$order->add_order_note( sprintf( __( 'GIM Pay: payment attempt failed (%s).', 'gimpay-woocommerce' ), $message ) );
+			$order->add_order_note( sprintf( __( 'GIM Pay: payment attempt failed (%s).', 'gimpay-woocommerce' ), $message ) . $this->bank_identifiers() );
 		}
 
 		wp_send_json_success( array( 'message' => $message ) );
+	}
+
+	/**
+	 * Identifiants côté banque (référence pour le support), ex. " [Acquirer MID 123, Outlet 456, TID 789]".
+	 */
+	private function bank_identifiers() {
+		$ids = array_filter(
+			array(
+				'Acquirer MID' => $this->acquirer_merchant_id,
+				'Outlet'       => $this->outlet_id,
+				'TID'          => $this->terminal_id,
+			),
+			'strlen'
+		);
+		if ( empty( $ids ) ) {
+			return '';
+		}
+		$parts = array();
+		foreach ( $ids as $label => $value ) {
+			$parts[] = $label . ' ' . $value;
+		}
+		return ' [' . implode( ', ', $parts ) . ']';
 	}
 
 	/**
@@ -574,7 +668,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	private function get_api() {
-		return new GimPay_API( $this->merchant_id, $this->terminal_id, $this->secret_key, $this->sandbox );
+		return new GimPay_API( $this->merchant_id, $this->terminal_id, $this->secret_key, $this->data_service_url );
 	}
 
 	/**

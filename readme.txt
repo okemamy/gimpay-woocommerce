@@ -4,7 +4,7 @@ Tags: woocommerce, payment gateway, gim-uemoa, xof, credit card
 Requires at least: 6.4
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -63,6 +63,10 @@ The reconciliation task checks unpaid GIM Pay orders from the last 24 hours ever
 Enable "Debug log" in the settings, then go to WooCommerce > Status > Logs and pick the "gimpay" source. Disable it in production.
 
 == Changelog ==
+
+= 1.2.2 =
+* New settings: acquirer merchant ID and outlet (shown in debug logs and failed payment notes for bank support).
+* Configurable Lightbox script and Data Service URLs (empty = default test/live URL, HTTPS only).
 
 = 1.2.1 =
 * GIM-UEMOA logo shown next to the payment method (classic and block checkout).
