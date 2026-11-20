@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-20
+
+### Added
+
+- Webhook (Notification URL) at `?wc-api=gimpay_webhook`, as described in the GIM Pay
+  Technical Flows & API Manual v1.6 and specified by GIM-UEMOA: JSON `POST`, SecureHash
+  computed on MerchantId, TerminalId and DateTimeLocalTrxn with the Merchant Shared Key,
+  answer HTTP 200 `{"Success": true}`. Approved purchases are checked against the order
+  reference and amount, and confirmed with FilterTransactions when *Double verification* is
+  enabled. Failed payments add an order note. The URL is shown on the settings screen.
+
+### Changed
+
+- FilterTransactions follows the v1.6 manual: `{{baseUrl}}/api/Vpos/FilterTransactions`
+  URLs and camelCase request fields. Response field names are read case-insensitively. The
+  former v1.1 default URLs saved in the settings are replaced automatically.
+- The Lightbox and Data Service URLs are now drop-down lists of the official GIM Pay URLs
+  (Lightbox: UAT, Production; FilterTransactions: Pre-production, UAT, Production) instead of
+  free text fields. A saved URL that is not in the list is replaced by the default one.
+
 ## [1.3.0] - 2026-10-09
 
 ### Changed

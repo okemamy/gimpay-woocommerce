@@ -32,6 +32,9 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	const MAX_ERROR_NOTES = 10;
 	const NONCE_ACTION    = 'gimpay_callback_';
 
+	/** Webhook (Notification URL) endpoint: ?wc-api=gimpay_webhook */
+	const WEBHOOK_ENDPOINT = 'gimpay_webhook';
+
 	/**
 	 * Credentials that can be defined in wp-config.php (take precedence over the database).
 	 */
@@ -95,6 +98,14 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 		add_action( 'woocommerce_receipt_' . $this->id, array( $this, 'receipt_page' ) );
 		add_action( 'woocommerce_api_' . $this->id, array( $this, 'handle_callback' ) );
+		add_action( 'woocommerce_api_' . self::WEBHOOK_ENDPOINT, array( $this, 'handle_webhook' ) );
+	}
+
+	/**
+	 * Notification URL to set in the GIM Merchant Portal (Supported Services).
+	 */
+	public static function webhook_url() {
+		return WC()->api_request_url( self::WEBHOOK_ENDPOINT );
 	}
 
 	/**
@@ -121,11 +132,30 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	);
 
 	/**
-	 * URL from the settings, or its default if the setting is empty.
+	 * Official URLs that can be selected, per service (GIM Pay documentation:
+	 * PayForm Plus guide v1.1 for the Lightbox, Technical Flows & API Manual v1.6
+	 * for FilterTransactions).
+	 */
+	const URL_CHOICES = array(
+		'lightbox'     => array( self::LIGHTBOX_UAT, self::LIGHTBOX_PROD ),
+		'data_service' => array( GimPay_API::URL_PREPROD, GimPay_API::URL_UAT, GimPay_API::URL_PROD ),
+	);
+
+	private static function url_choices( $key ) {
+		return self::URL_CHOICES[ 0 === strpos( $key, 'lightbox' ) ? 'lightbox' : 'data_service' ];
+	}
+
+	/**
+	 * Selected URL. A value that is not an official URL (empty, former v1.1
+	 * Data Service URL or former custom URL) is replaced by the default one.
 	 */
 	private function get_url_option( $key ) {
 		$url = trim( (string) $this->get_option( $key ) );
-		return '' !== $url ? $url : self::DEFAULT_URLS[ $key ];
+		if ( ! in_array( $url, self::url_choices( $key ), true ) ) {
+			$url = self::DEFAULT_URLS[ $key ];
+			$this->update_option( $key, $url );
+		}
+		return $url;
 	}
 
 	public function init_form_fields() {
@@ -193,7 +223,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 			'endpoints'             => array(
 				'title'       => __( 'GIM Pay endpoints', 'gimpay-woocommerce' ),
 				'type'        => 'title',
-				'description' => __( 'Pre-filled with the official GIM Pay URLs. Only change them if GIM Pay or your bank gives you different ones. Clear a field to restore its default value.', 'gimpay-woocommerce' ),
+				'description' => __( 'Official GIM Pay URLs. Select the environment given by GIM Pay or your bank.', 'gimpay-woocommerce' ),
 			),
 			'lightbox_url_test'     => array(
 				'title'   => __( 'Lightbox script URL (test)', 'gimpay-woocommerce' ),
@@ -307,28 +337,34 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	/**
 	 * Endpoint URL field: a regular text field, with its default URL shown below it.
 	 */
+	/**
+	 * Endpoint URL: drop-down list of the official URLs only.
+	 */
 	public function generate_gimpay_url_html( $key, $data ) {
-		/* translators: %s: default URL. */
-		$data['description'] = sprintf( __( 'Default: %s', 'gimpay-woocommerce' ), '<code>' . esc_html( $data['default'] ) . '</code>' );
-		$data['css']         = 'width: 100%; max-width: 40em;';
-		return $this->generate_text_html( $key, $data );
+		$labels = array(
+			GimPay_API::URL_PREPROD => __( 'Pre-production', 'gimpay-woocommerce' ),
+			GimPay_API::URL_UAT     => __( 'UAT (test)', 'gimpay-woocommerce' ),
+			GimPay_API::URL_PROD    => __( 'Production', 'gimpay-woocommerce' ),
+			self::LIGHTBOX_UAT      => __( 'UAT (test)', 'gimpay-woocommerce' ),
+			self::LIGHTBOX_PROD     => __( 'Production', 'gimpay-woocommerce' ),
+		);
+
+		$data['options'] = array();
+		foreach ( self::url_choices( $key ) as $url ) {
+			$data['options'][ $url ] = $labels[ $url ] . ' - ' . $url;
+		}
+		$data['css'] = 'width: 100%; max-width: 40em;';
+		return $this->generate_select_html( $key, $data );
 	}
 
 	/**
-	 * Empty restores the default URL; an invalid or non-HTTPS URL keeps the previous value.
+	 * Only an official URL can be saved; anything else falls back to the default one.
 	 */
 	public function validate_gimpay_url_field( $key, $value ) {
 		$value = trim( (string) $value );
-		if ( '' === $value ) {
-			return self::DEFAULT_URLS[ $key ];
-		}
-		if ( 'https' !== wp_parse_url( $value, PHP_URL_SCHEME ) || ! wp_http_validate_url( $value ) ) {
-			/* translators: %s: field name. */
-			WC_Admin_Settings::add_error( sprintf( __( 'GIM Pay: "%s" must be a valid HTTPS URL.', 'gimpay-woocommerce' ), $this->form_fields[ $key ]['title'] ) );
-			return $this->get_option( $key );
-		}
-		return esc_url_raw( $value );
+		return in_array( $value, self::url_choices( $key ), true ) ? $value : self::DEFAULT_URLS[ $key ];
 	}
+
 
 	public function is_configured() {
 		return '' !== $this->merchant_id && '' !== $this->terminal_id && '' !== $this->secret_key;
@@ -348,6 +384,9 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 			echo wp_kses_post( sprintf( __( 'GIM Pay only works with CFA francs (XOF). Current currency: %s.', 'gimpay-woocommerce' ), '<strong>' . esc_html( get_woocommerce_currency() ) . '</strong>' ) );
 			echo '</p></div>';
 		}
+		echo '<div class="notice notice-info inline"><p>';
+		echo esc_html__( 'Notification URL (webhook) to set in the GIM Merchant Portal, Supported Services tab:', 'gimpay-woocommerce' );
+		echo ' <code>' . esc_html( self::webhook_url() ) . '</code></p></div>';
 		parent::admin_options();
 	}
 
@@ -478,6 +517,162 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 		wp_send_json_error( array( 'message' => __( 'Unknown event.', 'gimpay-woocommerce' ) ), 400 );
 	}
 
+	/**
+	 * Webhook (Notification URL): server-to-server notification sent by GIM Pay
+	 * for every transaction of the terminal (Technical Flows & API Manual v1.6,
+	 * completed by the GIM-UEMOA answer):
+	 *  - POST, JSON body (MerchantId, TerminalId, DateTimeLocalTrxn, SecureHash,
+	 *    TxnType, MerchantReference, Amount, Status, ActionCode, Message…);
+	 *  - SecureHash computed only on MerchantId + TerminalId + DateTimeLocalTrxn
+	 *    with the Merchant Shared Key; validation is mandatory;
+	 *  - acknowledged with HTTP 200 and {"Success": true}. GIM Pay retries when
+	 *    the server does not answer.
+	 *
+	 * The SecureHash does not cover the amount, the status or the reference:
+	 * the reference and the amount are checked against the order, and with
+	 * "Double verification" the payment is also confirmed with FilterTransactions.
+	 */
+	public function handle_webhook() {
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( sanitize_key( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ) : '';
+		if ( 'POST' !== $method ) {
+			self::webhook_response( false, 405 );
+		}
+
+		$payload = json_decode( (string) file_get_contents( 'php://input' ), true );
+		if ( ! is_array( $payload ) ) {
+			$this->log( 'Webhook rejected: invalid JSON body.', 'error' );
+			self::webhook_response( false, 400 );
+		}
+
+		$data      = self::sanitize_data( $payload );
+		$reference = isset( $data['MerchantReference'] ) ? $data['MerchantReference'] : '';
+
+		// Never log the cardholder, the card or the customer contact details.
+		$this->log( 'Webhook received: ' . wp_json_encode( array_diff_key( $data, array_flip( array( 'PayerName', 'PayerAccount', 'SecureHash', 'Email', 'CustomerMobile', 'Token', 'TokenCard', 'TokenCustomerId' ) ) ) ) );
+
+		if ( ! $this->is_configured() ) {
+			$this->log( 'Webhook rejected: the gateway is not configured.', 'error' );
+			self::webhook_response( false, 503 );
+		}
+
+		$datetime = isset( $data['DateTimeLocalTrxn'] ) ? $data['DateTimeLocalTrxn'] : '';
+		$ids_ok   = isset( $data['MerchantId'], $data['TerminalId'] ) && $data['MerchantId'] === $this->merchant_id && $data['TerminalId'] === $this->terminal_id;
+		$expected = GimPay_Hash::notification( $datetime, $this->merchant_id, $this->terminal_id, $this->secret_key );
+		$received = isset( $data['SecureHash'] ) ? strtoupper( trim( $data['SecureHash'] ) ) : '';
+		$hash_ok  = $ids_ok && '' !== $datetime && '' !== $expected && '' !== $received && hash_equals( $expected, $received );
+
+		$order      = self::order_from_reference( $reference );
+		$references = $order ? self::get_references( $order ) : array();
+		$is_ours    = $order && $order->get_payment_method() === $this->id && isset( $references[ $reference ] );
+
+		if ( ! $hash_ok ) {
+			$this->log( 'Webhook rejected: ' . ( $ids_ok ? 'invalid SecureHash' : 'MerchantId/TerminalId mismatch' ) . ' (ref. ' . $reference . ').', 'error' );
+			if ( $is_ours ) {
+				/* translators: %s: GIM Pay merchant reference. */
+				$this->add_capped_note( $order, sprintf( __( 'GIM Pay: webhook rejected, invalid SecureHash (ref. %s).', 'gimpay-woocommerce' ), $reference ) );
+			}
+			self::webhook_response( false, 401 );
+		}
+
+		// Every transaction of the terminal is notified: ignore those that are
+		// not WooCommerce payments of this store, and anything but purchases
+		// (TxnType 1 in the GIM-UEMOA example).
+		$txn_type = isset( $data['TxnType'] ) ? strtolower( $data['TxnType'] ) : '';
+		if ( ! $is_ours || ! in_array( $txn_type, array( '1', 'purchase' ), true ) ) {
+			$this->log( 'Webhook acknowledged and ignored (ref. ' . $reference . ', TxnType ' . $txn_type . ').' );
+			self::webhook_response( true );
+		}
+
+		$status   = isset( $data['Status'] ) ? strtolower( $data['Status'] ) : '';
+		$approved = isset( $data['ActionCode'] ) && '000' === $data['ActionCode'] && in_array( $status, array( 'success', 'approved' ), true );
+
+		if ( ! $approved ) {
+			$message = '';
+			foreach ( array( 'Message', 'MessageCustomer', 'Status' ) as $field ) {
+				if ( ! empty( $data[ $field ] ) ) {
+					$message = $data[ $field ];
+					break;
+				}
+			}
+			$message .= isset( $data['ActionCode'] ) && '' !== $data['ActionCode'] ? ' [' . $data['ActionCode'] . ']' : '';
+			if ( ! $order->is_paid() ) {
+				/* translators: %s: error message returned by GIM Pay. */
+				$this->add_capped_note( $order, sprintf( __( 'GIM Pay: payment attempt failed (%s).', 'gimpay-woocommerce' ), mb_substr( $message, 0, 200 ) ) . $this->bank_identifiers() );
+			}
+			self::webhook_response( true );
+		}
+
+		if ( $order->is_paid() ) {
+			if ( $reference !== $order->get_meta( '_gimpay_reference' ) && ! $order->get_meta( '_gimpay_duplicate_' . $reference ) ) {
+				$order->update_meta_data( '_gimpay_duplicate_' . $reference, 1 );
+				$order->save();
+				/* translators: %s: GIM Pay merchant reference. */
+				$order->add_order_note( sprintf( __( 'GIM Pay: WARNING, a second signed payment was received (ref. %s) although the order was already paid. Check and refund if needed.', 'gimpay-woocommerce' ), $reference ) );
+			}
+			self::webhook_response( true );
+		}
+
+		$expected_amount = (int) $references[ $reference ];
+		$paid_amount     = isset( $data['Amount'] ) ? (int) round( (float) $data['Amount'] ) : -1;
+		if ( $paid_amount !== $expected_amount ) {
+			/* translators: 1: amount paid, 2: expected amount. */
+			$order->update_status( 'on-hold', sprintf( __( 'GIM Pay: amount paid (%1$d) differs from the expected amount (%2$d). Check manually.', 'gimpay-woocommerce' ), $paid_amount, $expected_amount ) );
+			self::webhook_response( true );
+		}
+
+		if ( ! $this->api_verification ) {
+			$this->complete_order( $order, $reference, ! empty( $data['SystemReference'] ) ? $data['SystemReference'] : $reference, __( 'webhook, signature verified', 'gimpay-woocommerce' ) );
+			self::webhook_response( true );
+		}
+
+		$result = $this->get_api()->find_by_reference( $reference );
+		if ( is_wp_error( $result ) ) {
+			// No answer: GIM Pay retries, and the scheduled reconciliation also checks the order.
+			$this->log( 'Webhook: Data Service error for ' . $reference . ': ' . $result->get_error_message(), 'error' );
+			self::webhook_response( false, 503 );
+		}
+
+		$txn = GimPay_API::find_approved( $result, $reference, $expected_amount );
+		if ( $txn ) {
+			$this->complete_order( $order, $reference, self::transaction_id( $txn, $reference ), __( 'webhook, signature verified, confirmed by the Data Service', 'gimpay-woocommerce' ) );
+			self::webhook_response( true );
+		}
+
+		/* translators: %s: GIM Pay merchant reference. */
+		$order->update_status( 'on-hold', sprintf( __( 'GIM Pay: signed payment received (ref. %s) but not found as approved by the Data Service. Check manually.', 'gimpay-woocommerce' ), $reference ) );
+		self::webhook_response( true );
+	}
+
+	/**
+	 * Order of one of our references (WC<order id>T<timestamp><random>).
+	 */
+	private static function order_from_reference( $reference ) {
+		if ( ! preg_match( '/^WC(\d+)T\d+$/', (string) $reference, $matches ) ) {
+			return false;
+		}
+		return wc_get_order( absint( $matches[1] ) );
+	}
+
+	/**
+	 * Order note limited to MAX_ERROR_NOTES per order (the endpoints are public).
+	 */
+	private function add_capped_note( WC_Order $order, $note ) {
+		$count = (int) $order->get_meta( '_gimpay_error_notes' );
+		if ( $order->is_paid() || $count >= self::MAX_ERROR_NOTES ) {
+			return;
+		}
+		$order->update_meta_data( '_gimpay_error_notes', $count + 1 );
+		$order->save();
+		$order->add_order_note( $note );
+	}
+
+	/**
+	 * Answer expected by GIM Pay: HTTP 200 and {"Success": true}.
+	 */
+	private static function webhook_response( $success, $status = 200 ) {
+		wp_send_json( array( 'Success' => (bool) $success ), $status );
+	}
+
 	private function handle_complete( WC_Order $order, array $data ) {
 		$redirect = $this->get_return_url( $order );
 
@@ -562,7 +757,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	private static function transaction_id( array $txn, $reference ) {
-		foreach ( array( 'TransactionId', 'RRN' ) as $field ) {
+		foreach ( array( 'transactionid', 'rrn' ) as $field ) {
 			if ( ! empty( $txn[ $field ] ) ) {
 				return (string) $txn[ $field ];
 			}
@@ -676,7 +871,7 @@ class GimPay_Gateway extends WC_Payment_Gateway {
 			}
 			$txn = GimPay_API::find_approved( $result, $reference, (int) $amount );
 			if ( $txn ) {
-				$rrn = isset( $txn['RRN'] ) ? $txn['RRN'] : '-';
+				$rrn = isset( $txn['rrn'] ) ? $txn['rrn'] : '-';
 				/* translators: %s: retrieval reference number (RRN). */
 				$how = $automatic ? sprintf( __( 'automatic reconciliation, RRN %s', 'gimpay-woocommerce' ), $rrn ) : sprintf( __( 'manual check, RRN %s', 'gimpay-woocommerce' ), $rrn );
 				$this->complete_order( $order, $reference, self::transaction_id( $txn, $reference ), $how );

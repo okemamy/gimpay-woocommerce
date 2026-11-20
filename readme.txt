@@ -4,7 +4,7 @@ Tags: woocommerce, payment gateway, gim-uemoa, xof, credit card
 Requires at least: 6.4
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,11 @@ The card network could not route the card to its issuing bank; this is not a plu
 Enable "Debug log" in the settings, then go to WooCommerce > Status > Logs and pick the "gimpay" source. Disable it in production.
 
 == Changelog ==
+
+= 1.4.0 =
+* Webhook (Notification URL) at ?wc-api=gimpay_webhook, per the Technical Flows & API Manual v1.6 and GIM-UEMOA: JSON POST, SecureHash on MerchantId + TerminalId + DateTimeLocalTrxn, answer {"Success": true}.
+* FilterTransactions: v1.6 URL (/api/Vpos/FilterTransactions) and field names. Saved v1.1 default URLs are migrated automatically.
+* Endpoint URLs are selected from drop-down lists of the official GIM Pay URLs instead of being typed.
 
 = 1.3.0 =
 * Endpoint URLs pre-filled with the official GIM Pay URLs and editable, with separate test and live fields. Clearing a field restores its default value.

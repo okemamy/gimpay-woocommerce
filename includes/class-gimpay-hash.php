@@ -97,6 +97,15 @@ class GimPay_Hash {
 	}
 
 	/**
+	 * Webhook (Notification URL) hash: as specified by GIM-UEMOA, computed only on
+	 * MerchantId, TerminalId and DateTimeLocalTrxn with the Merchant Shared Key,
+	 * i.e. the same fields as the Data Service request.
+	 */
+	public static function notification( $datetime, $merchant_id, $terminal_id, $secret_hex ) {
+		return self::data_service_request( $datetime, $merchant_id, $terminal_id, $secret_hex );
+	}
+
+	/**
 	 * Decodes the hexadecimal key. Returns '' if invalid.
 	 *
 	 * @param string $secret_hex Key.

@@ -46,15 +46,14 @@ through the **GIM Pay PayForm Plus Lightbox**.
 | Acquirer merchant ID | Bank-side merchant ID | Reference only: debug log and failed payment notes |
 | Outlet | Outlet number | Reference only: debug log and failed payment notes |
 | Merchant secret key | Merchant secret key (hexadecimal) | HMAC signatures; never displayed again |
-| Lightbox script URL (test / live) | Pre-filled with the official GIM Pay URL | Script loaded on the payment page |
-| Data Service URL (test / live) | Pre-filled with the official GIM Pay URL | Server-to-server payment confirmation |
+| Lightbox script URL (test / live) | Drop-down list: UAT, Production | Script loaded on the payment page |
+| Data Service URL (test / live) | Drop-down list: Pre-production, UAT, Production | Server-to-server payment confirmation (FilterTransactions) |
 | Amount unit | Keep `× 1` for XOF | Amount sent to GIM Pay |
 | Double verification | Enabled by default | Confirms every payment with the Data Service |
 | Debug log | Disabled by default | WooCommerce › Status › Logs, source `gimpay` |
 
-The endpoint URLs are pre-filled with the official GIM Pay URLs and only need to be changed
-if GIM Pay or your bank gives you different ones. The test or live URL is used depending on
-**Test mode (UAT)**. Custom URLs must use HTTPS; clearing a field restores its default value.
+The endpoint URLs are selected from the official GIM Pay URLs (they cannot be typed). The test
+or live URL is used depending on **Test mode (UAT)**.
 
 Leaving the secret key field empty keeps the saved key.
 
@@ -86,7 +85,22 @@ Deleting the plugin removes its settings, including the secret key.
    Data Service unreachable, transaction not found), the order is put *On hold* with an
    explanatory note.
 
-If the customer closes the page before confirmation, the scheduled reconciliation or the
+GIM Pay also sends a server-to-server notification (webhook) for every transaction. Set this
+Notification URL in the GIM Merchant Portal (Supported Services tab); it is also shown on the
+plugin settings screen:
+
+```
+https://<your-domain>/?wc-api=gimpay_webhook
+```
+
+The webhook is processed as specified by GIM-UEMOA (Technical Flows & API Manual v1.6): JSON
+`POST`, SecureHash computed on MerchantId, TerminalId and DateTimeLocalTrxn with the Merchant
+Shared Key, answer HTTP 200 `{"Success": true}`. The SecureHash does not cover the amount or
+the status, so the plugin also checks the reference and the amount against the order and,
+with *Double verification*, confirms the payment with FilterTransactions. Notifications for
+other transactions of the terminal are acknowledged and ignored.
+
+If the customer closes the page before confirmation, the webhook, the scheduled reconciliation or the
 **Check GIM Pay payment** order action queries the Data Service and completes the order
 once an approved payment is found.
 

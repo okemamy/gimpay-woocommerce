@@ -1,0 +1,80 @@
+name: Build plugin zip
+
+# - Every push / pull request: lint + tests, zip available in the run's "Artifacts".
+# - Tag "vX.Y.Z" pushed: same, plus a GitHub Release with the zip attached.
+# The zip is built with "git archive": files marked export-ignore in
+# .gitattributes (tests, .github, CHANGELOG.md…) are left out.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: none
+
+      - name: PHP syntax check
+        run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
+
+      - name: SecureHash tests
+        run: php tests/test-hash.php
+
+      - name: Read plugin version
+        id: version
+        run: |
+          version=$(sed -n 's/^ \* Version: *//p' gimpay-woocommerce.php | tr -d '[:space:]')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Plugin version: $version"
+
+      - name: Check tag matches plugin version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          [ "$tag" = "${{ steps.version.outputs.version }}" ] || { echo "::error::Tag v$tag does not match plugin Version ${{ steps.version.outputs.version }}"; exit 1; }
+          grep -q "^Stable tag: $tag$" readme.txt || { echo "::error::readme.txt Stable tag is not $tag"; exit 1; }
+          grep -q "define( 'GIMPAY_WC_VERSION', '$tag' );" gimpay-woocommerce.php || { echo "::error::GIMPAY_WC_VERSION is not $tag"; exit 1; }
+
+      - name: Build zip
+        run: |
+          mkdir -p dist
+          git archive --format=zip --prefix=gimpay-woocommerce/ -o dist/gimpay-woocommerce.zip HEAD
+          unzip -l dist/gimpay-woocommerce.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gimpay-woocommerce-${{ steps.version.outputs.version }}
+          path: dist/gimpay-woocommerce.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/gimpay-woocommerce.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "GIM Pay for WooCommerce ${GITHUB_REF_NAME#v}" \
+            --generate-notes
